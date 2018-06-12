@@ -491,7 +491,7 @@ class NodeGenerator:
             code.append('};')
             code.append(C.blank(1))
             code.append(C.statement(inDatabuf))
-            code.append(C.statement(C.variable('m_inPortDirtyFlags','uint8_t', static=True, array='APX_OUT_PORT_DATA_LEN')))
+            code.append(C.statement(C.variable('m_inPortDirtyFlags','uint8_t', static=True, array='APX_IN_PORT_DATA_LEN')))
             code.append(C.blank(1))
         else:
             inDatabuf,inInitData = None,None
