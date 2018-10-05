@@ -154,8 +154,12 @@ class RequirePort(Port):
    """
    def __init__(self, name, dataSignature, attributes=None):
       super().__init__('R',name, dataSignature, attributes)
+
    def mirror(self):
       return ProvidePort(self.name, str(self.dsg), str(self.attr) if self.attr is not None else None)
+
+   def clone(self):
+      return RequirePort(self.name, str(self.dsg), str(self.attr) if self.attr is not None else None)
 
 
 class ProvidePort(Port):
@@ -164,8 +168,12 @@ class ProvidePort(Port):
    """
    def __init__(self, name, dataSignature, attributes=None):
       super().__init__('P',name, dataSignature, attributes)
+
    def mirror(self):
       return RequirePort(self.name, str(self.dsg), str(self.attr) if self.attr is not None else None)
+
+   def clone(self):
+      return ProvidePort(self.name, str(self.dsg), str(self.attr) if self.attr is not None else None)
 
 
 class DataType:
@@ -182,6 +190,16 @@ class DataType:
          return 'T"%s"%s:%s'%(self.name, str(self.dsg), str(self.attr))
       else:
          return 'T"%s"%s'%(self.name, str(self.dsg))
+
+   def clone(self):
+      if self.attr is not None:
+         return DataType(self.name, self.dsg.toString(True), str(self.attr) )
+      else:
+         return DataType(self.name, self.dsg.toString(True) )
+
+   @property
+   def dataElement(self):
+      return self.dsg.dataElement
 
 class DataSignature:
    """
@@ -203,11 +221,14 @@ class DataSignature:
       self.parent=parent
 
    def __str__(self):
-      if self.dataElement.typeCode == REFERENCE_TYPE_CODE:
-         if hasattr(self.dataElement.typeReference,'id'):
-            return 'T[{:d}]'.format(self.dataElement.typeReference.id)
-      return self.str
+      return self.toString()
 
+   def toString(self, normalized = True):
+      if (self.dataElement.typeCode == REFERENCE_TYPE_CODE) and isinstance(self.dataElement.typeReference, DataElement):
+         if normalized and hasattr(self.dataElement.typeReference,'id'):
+            return 'T[{:d}]'.format(self.dataElement.typeReference.id)
+         return 'T[{}]'.format(self.dataElement.typeReference.name)
+      return self.str
 
    def packLen(self):
       result=0

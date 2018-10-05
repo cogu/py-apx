@@ -10,7 +10,7 @@ from apx.parser import apx_split_line, Parser
 class Node:
    """
    Represents an APX node
-   
+
    Example:
    >>> import sys
    >>> import apx
@@ -26,26 +26,28 @@ class Node:
    """
    def __init__(self,name=None):
       self.name=name
+      self.isFinalized = False
       self.dataTypes = []
       self.requirePorts=[]
       self.providePorts=[]
-      self.dataTypeMap = {}      
-   
+      self.dataTypeMap = {}
+
+
    @classmethod
    def from_autosar_swc(cls, swc, name=None, reverse=False):
       assert(isinstance(swc, autosar.component.AtomicSoftwareComponent))
       node = cls()
       node.import_autosar_swc(swc, name=name)
       return node
-   
+
    @classmethod
    def from_text(cls, text):
-      return Parser().loads(text)      
-   
+      return Parser().loads(text)
+
    def _updateDataType(self, ws, port):
       portInterface = ws.find(port.portInterfaceRef)
       if isinstance(portInterface,autosar.portinterface.SenderReceiverInterface):
-         if len(portInterface.dataElements)==1:         
+         if len(portInterface.dataElements)==1:
             dataType = ws.find(portInterface.dataElements[0].typeRef)
             assert(dataType is not None)
             if dataType.name not in self.dataTypeMap:
@@ -62,7 +64,7 @@ class Node:
          elif len(portInterface.dataElements)>1:
             raise NotImplementedError('SenderReceiverInterface with more than 1 element not supported')
       return None
-   
+
    def _calcAttributeFromAutosarPort(self,ws,port):
       """
       returns string
@@ -76,8 +78,8 @@ class Node:
                initValue=initValue.value
             return "="+self._deriveInitValueFromAutosarConstant(initValue)
       return None
-   
-   def _deriveInitValueFromAutosarConstant(self,item):      
+
+   def _deriveInitValueFromAutosarConstant(self,item):
       if isinstance(item,autosar.constant.IntegerValue):
          if (item.value>255):
             return "0x%02X"%item.value
@@ -94,7 +96,7 @@ class Node:
       else:
          raise NotImplementedError(str(type(item)))
 
-   
+
    def import_autosar_swc(self, swc, ws=None, name=None):
       assert(isinstance(swc, autosar.component.AtomicSoftwareComponent))
       if name is None:
@@ -109,9 +111,9 @@ class Node:
          self.add_autosar_port(port, ws)
       self.resolve_types()
       return self
-   
-   
-   
+
+
+
    def add_autosar_port(self, port, ws=None):
       """
       adds an autosar port to the node
@@ -121,7 +123,7 @@ class Node:
          ws=port.rootWS()
       assert(ws is not None)
       dataType=self._updateDataType(ws, port)
-      if dataType is not None:         
+      if dataType is not None:
          if isinstance(port, autosar.component.RequirePort):
             apx_port = apx.RequirePort(port.name, "T[%s]"%dataType.id, self._calcAttributeFromAutosarPort(ws, port))
             return self.add_require_port(apx_port)
@@ -130,7 +132,7 @@ class Node:
             return self.add_provide_port(apx_port)
          else:
             raise ValueError('invalid type '+str(type(port)))
-      
+
    def append(self, item):
       """
       Adds the item to the node.
@@ -148,7 +150,7 @@ class Node:
       elif isinstance(item, str):
          parts = apx_split_line(item)
          if len(parts) != 4:
-            raise ValueError("invalid APX string: '%s'"%item)         
+            raise ValueError("invalid APX string: '%s'"%item)
          if parts[0]=='R':
             newPort = apx.RequirePort(parts[1],parts[2],parts[3])
             if newPort is not None:
@@ -165,8 +167,8 @@ class Node:
             raise ValueError(parts[0])
       else:
          raise ValueError(type(port))
-  
-  
+
+
    def add_type(self, dataType):
       if dataType.name not in self.dataTypeMap:
          dataType.id=len(self.dataTypes)
@@ -176,21 +178,21 @@ class Node:
          return dataType
       else:
          raise ValueError('Data type with name {} already exists'.format(dataType.name))
-   
+
    def add_require_port(self, port):
       port.id = len(self.requirePorts)
       if port.dsg.dataElement.isReference:
          port.resolve_type(self.dataTypes)
       self.requirePorts.append(port)
       return port
-      
+
    def add_provide_port(self, port):
       port.id = len(self.providePorts)
       if port.dsg.dataElement.isReference:
          port.resolve_type(self.dataTypes)
       self.providePorts.append(port)
       return port
-   
+
    def write(self, fp):
       """
       writes node as text in fp
@@ -202,12 +204,12 @@ class Node:
          print(str(port), file=fp)
       for port in self.requirePorts:
          print(str(port), file=fp)
-   
-   def lines(self):
+
+   def lines(self, normalized=None):
       """
       returns context as list of strings (one line at a time)
       """
-      lines = ['N"%s"'%self.name]      
+      lines = ['N"%s"'%self.name]
       for dataType in self.dataTypes:
          lines.append(str(dataType))
       for port in self.providePorts:
@@ -215,7 +217,7 @@ class Node:
       for port in self.requirePorts:
          lines.append(str(port))
       return lines
-   
+
    def mirror(self, name=None):
       """
       clones the node in a version where all provide and require ports are reversed
@@ -230,10 +232,58 @@ class Node:
          mirror.dataTypeMap[dataType.name]=dataType
       mirror.resolve_types()
       return mirror
-   
-   def find(self, name):      
+
+   def add_port_from_node(self, from_node, from_port):
       """
-      finds type or port by name
+      Attempts to clone the port from the other node, including all its data types
+      """
+
+      if not isinstance(from_node, apx.Node):
+         raise ValueError('from_node argument must be of type apx.Node')
+      if not isinstance(from_port, apx.Port):
+         raise ValueError('from_node argument must derive from type apx.Port')
+
+      to_port = from_port.clone()
+      from_data_element = from_port.dsg.dataElement
+      if from_data_element.typeCode == apx.REFERENCE_TYPE_CODE:
+         from_data_type = from_data_element.typeReference
+         if not isinstance(from_data_type, apx.base.DataType):
+            raise RunTimeError('Node.finalize() method must be called before this method can be used')
+         to_data_type  = self.find(from_data_type.name)
+         if to_data_type is None:
+            self.add_data_type_from_node(from_node, from_data_type)
+      self.append(to_port)
+      return to_port
+
+
+   def add_data_type_from_node(self, from_node, from_data_type):
+      """
+      Attempts to clone the data type from other node to this node
+      """
+      if not isinstance(from_node, apx.Node):
+         raise ValueError('from_node argument must be of type apx.Node')
+
+      if not isinstance(from_data_type, apx.DataType):
+         raise ValueError('from_data_type argument must be of type apx.DataType')
+      from_data_element = from_data_type.dsg.dataElement
+      if (from_data_element.typeCode >= apx.UINT8_TYPE_CODE) and (from_data_element.typeCode < apx.RECORD_TYPE_CODE):
+         pass #no further action needed
+      elif (from_data_element.typeCode == apx.RECORD_TYPE_CODE):
+         for elem in from_data_element.elements:
+            if elem.typeCode == apx.REFERENCE_TYPE_CODE:
+               self.add_data_type_from_node(from_node, elem.typeReference)
+      else:
+         raise NotImplementedError(from_data_element.typeCode)
+
+      to_data_type = from_data_type.clone()
+      self.append(to_data_type)
+      return to_data_type
+
+
+   def find(self, name):
+      """
+      Finds type or port by name.
+      If the variable name is a list, it finds multiple items
       """
       if isinstance(name, list):
          result = []
@@ -242,7 +292,7 @@ class Node:
          return result
       else:
          return self._inner_find(name)
-   
+
    def _inner_find(self, name):
       """
       finds type or port by name (internal implementation)
@@ -250,7 +300,7 @@ class Node:
       for elem in self.dataTypes+self.requirePorts+self.providePorts:
          if elem.name == name:
             return elem
-   
+
    def resolve_types(self):
       """
       Resolves all integer and string type references with their actual object counter-parts
@@ -259,10 +309,8 @@ class Node:
          if port.dsg.dataElement.isReference:
             port.resolve_type(self.dataTypes)
 
-   
+   def finalize(self):
+      if not self.isFinalized:
+         self.resolve_types()
+         self.isFinalized = True
 
-
-if __name__ == "__main__":
-    import doctest
-    doctest.testmod()
-   

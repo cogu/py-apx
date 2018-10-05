@@ -119,7 +119,7 @@ class TestNode(unittest.TestCase):
    def test_raw_ports_1(self):
       node = apx.Node('TestNode')
       port = node.append(apx.RequirePort('U8Signal','C','=255'))
-      self.assertIsInstance(port, apx.RequirePort)      
+      self.assertIsInstance(port, apx.RequirePort)
       self.assertIsInstance(port.data_element, apx.DataElement)
       self.assertEqual(port.data_element.typeCode, apx.UINT8_TYPE_CODE)
 
@@ -195,7 +195,7 @@ T"Repetitions_T"C
 T"SoundRequest_T"{"SoundId"T["SoundId_T"]"Volume"T["Volume_T"]"Repetitions"T["Repetitions_T"]}
 P"SoundRequest"T["SoundRequest_T"]:={65535,255,255}
 """
-      
+
       node = apx.Node.from_text(apx_text)
       self.assertIsInstance(node, apx.Node)
       dataElement = node.providePorts[0].dsg.dataElement
@@ -223,7 +223,47 @@ P"SoundRequest"T["SoundRequest_T"]:={65535,255,255}
       dataType = element.typeReference
       self.assertEqual(dataType.name, "Repetitions_T")
       self.assertEqual(dataType.dsg.dataElement.typeCode, apx.UINT8_TYPE_CODE)
-         
+
+   def test_copy_data_type_between_nodes_when_type_is_record_with_references(self):
+      apx_text = """APX/1.2
+N"TestNode1"
+T"SoundId_T"S
+T"Volume_T"C
+T"Repetitions_T"C
+T"SoundRequest_T"{"SoundId"T["SoundId_T"]"Volume"T["Volume_T"]"Repetitions"T["Repetitions_T"]}
+P"SoundRequest"T["SoundRequest_T"]:={65535,255,255}
+"""
+      node1 = apx.Node.from_text(apx_text)
+      self.assertIsInstance(node1, apx.Node)
+      node1.finalize()
+      node2 = apx.Node('MyCopy')
+      self.assertIsInstance(node2, apx.Node)
+      type1 = node1.find('SoundRequest_T')
+      self.assertIsInstance(type1, apx.DataType)
+      type2 = node2.add_data_type_from_node(node1, type1)
+      self.assertIsInstance(type2, apx.DataType)
+
+   def test_copy_ports_between_nodes(self):
+      apx_text = """APX/1.2
+N"TestNode1"
+T"SoundId_T"S
+T"Volume_T"C
+T"Repetitions_T"C
+T"SoundRequest_T"{"SoundId"T["SoundId_T"]"Volume"T["Volume_T"]"Repetitions"T["Repetitions_T"]}
+P"SoundRequest"T["SoundRequest_T"]:={65535,255,255}
+"""
+      node1 = apx.Node.from_text(apx_text)
+      self.assertIsInstance(node1, apx.Node)
+      node1.finalize()
+      node2 = apx.Node('MyCopy')
+      self.assertIsInstance(node2, apx.Node)
+      port1 = node1.find('SoundRequest')
+      self.assertIsInstance(port1, apx.ProvidePort)
+      port2 = node2.add_port_from_node(node1, port1)
+      self.assertIsInstance(port2, apx.ProvidePort)
+      node2.finalize()
+      result = apx.Context().append(node2).dumps(normalized=True)
+      print(result)
 
 if __name__ == '__main__':
     unittest.main()
