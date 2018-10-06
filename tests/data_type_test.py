@@ -14,6 +14,19 @@ class TestApxDataType(unittest.TestCase):
         dt = apx.DataType('MyU8_T','C')
         self.assertIsInstance(dt, apx.DataType)
         self.assertEqual(dt.dataElement.typeCode, apx.UINT8_TYPE_CODE)
+        self.assertEqual(str(dt), 'T"MyU8_T"C')
+
+    def test_create_uint8_range_type(self):
+        dt = apx.DataType('MyU8_T','C(0,3)')
+        self.assertIsInstance(dt, apx.DataType)
+        self.assertEqual(dt.dataElement.typeCode, apx.UINT8_TYPE_CODE)
+        self.assertEqual(str(dt), 'T"MyU8_T"C(0,3)')
+
+    def test_create_uint8_array_type(self):
+        dt = apx.DataType('MyU8_T','C[8]')
+        self.assertIsInstance(dt, apx.DataType)
+        self.assertEqual(dt.dataElement.typeCode, apx.UINT8_TYPE_CODE)
+        self.assertEqual(str(dt), 'T"MyU8_T"C[8]')
 
     def test_clone_uint8_type(self):
         dt1 = apx.DataType('MyU8_T','C')
@@ -60,6 +73,12 @@ class TestApxDataType(unittest.TestCase):
         self.assertEqual(dt2.dataElement.typeCode, apx.REFERENCE_TYPE_CODE)
         self.assertEqual(dt2.dataElement.typeReference, 'MyU8_T')
         self.assertEqual(str(dt2), 'T"MyRef_T"T["MyU8_T"]')
+
+    def test_record_type(self):
+        dt = apx.DataType('MyRecord_T','{"Name"a[8]"Id"L"Data"S[3]}')
+        self.assertIsInstance(dt, apx.DataType)
+        self.assertEqual(dt.dataElement.typeCode, apx.RECORD_TYPE_CODE)
+        self.assertEqual(str(dt), 'T"MyRecord_T"{"Name"a[8]"Id"L"Data"S[3]}')
 
 if __name__ == '__main__':
     unittest.main()

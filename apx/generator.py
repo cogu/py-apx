@@ -153,6 +153,9 @@ class NodeGenerator:
         self.callback_list = []
         self.has_callbacks = True if (callbacks is not None) else False
 
+        if not node.isFinalized:
+            node.finalize()
+
         source_dir = output_dir
         if header_dir is None:
             header_dir=source_dir

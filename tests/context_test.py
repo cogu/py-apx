@@ -18,6 +18,7 @@ class TestApxContext(unittest.TestCase):
       node.providePorts.append(apx.ProvidePort('FuelLevel','C'))
       node.providePorts.append(apx.ProvidePort('ParkBrakeActive','T[0]','=3'))
       node.requirePorts.append(apx.RequirePort('RheostatLevelRqst','C','=255'))
+      node.finalize()
       context = apx.Context()
       context.append(node)
       text=context.dumps()
@@ -43,6 +44,7 @@ class TestApxContext(unittest.TestCase):
       node1.requirePorts.append(apx.RequirePort('RheostatLevelRqst','C','=255'))
       self.assertFalse(node1.providePorts[0].dsg.isComplexType())
 
+      node1.finalize()
       context = apx.Context()
       context.append(node1)
       text=context.dumps()

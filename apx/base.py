@@ -107,6 +107,12 @@ def _derive_c_typename(dataElement):
       raise NotImplementedError('typeCode={:d}'.format(dataElement.typeCode))
    return retval
 
+def _typeCodeToStr(typeCode):
+   mapping = ['C', 'S', 'L', 'U', 'c', 's', 'l', 'u', 'a']
+   if (typeCode>=0) and (typeCode <= STRING_TYPE_CODE ):
+      return mapping[typeCode]
+   else:
+      raise ValueError('Invalid typeCode: {:d}'.format(typeCode))
 
 class Port:
    """
@@ -120,12 +126,14 @@ class Port:
       self.id = None
 
    def __str__(self):
+      return self.to_string(True)
+
+   def to_string(self, normalized):
       if self.attr is not None:
-         dsg=str(self.dsg)
-         attr=str(self.attr)
-         return '%s"%s"%s:%s'%(self.portType, self.name, dsg, attr)
+         return '%s"%s"%s:%s'%(self.portType, self.name, self.dsg.toString(normalized), str(self.attr))
       else:
-         return '%s"%s"%s'%(self.portType, self.name, str(self.dsg))
+         return '%s"%s"%s'%(self.portType, self.name, self.dsg.toString(normalized))
+
 
    def resolve_type(self, typeList):
       return self.dsg.resolve_data_element(typeList)
@@ -184,6 +192,7 @@ class DataType:
       self.name = name
       self.dsg = DataSignature(dataSignature, None, self)
       self.attr = attributes
+      self.id = None
 
    def __str__(self):
       if self.attr is not None:
@@ -193,9 +202,9 @@ class DataType:
 
    def clone(self):
       if self.attr is not None:
-         return DataType(self.name, self.dsg.toString(True), str(self.attr) )
+         return DataType(self.name, self.dsg.toString(normalized=False), str(self.attr) )
       else:
-         return DataType(self.name, self.dsg.toString(True) )
+         return DataType(self.name, self.dsg.toString(normalized=False) )
 
    @property
    def dataElement(self):
@@ -212,23 +221,17 @@ class DataSignature:
             raise ParseError("string '%s' not fully parsed"%dsg)
          assert(isinstance(dataElement, DataElement))
          self.dataElement=dataElement
-         self.str=dsg
       elif isinstance(dsg, DataElement):
          self.dataElement=copy.deepcopy(DataElement)
-         self.str=None
       else:
          raise NotImplementedError(type(dsg))
       self.parent=parent
 
    def __str__(self):
-      return self.toString()
+      return self.dataElement.toString()
 
-   def toString(self, normalized = True):
-      if (self.dataElement.typeCode == REFERENCE_TYPE_CODE) and isinstance(self.dataElement.typeReference, DataElement):
-         if normalized and hasattr(self.dataElement.typeReference,'id'):
-            return 'T[{:d}]'.format(self.dataElement.typeReference.id)
-         return 'T[{}]'.format(self.dataElement.typeReference.name)
-      return self.str
+   def toString(self, normalized=True):
+      return self.dataElement.toString(normalized)
 
    def packLen(self):
       result=0
@@ -452,6 +455,34 @@ class DataElement:
    @property
    def isReference(self):
       return self.typeCode == REFERENCE_TYPE_CODE
+
+   def toString(self, normalized = True):
+      retval = None
+      if (self.typeCode >= UINT8_TYPE_CODE) and (self.typeCode <= STRING_TYPE_CODE):
+         retval = _typeCodeToStr(self.typeCode)
+      elif self.typeCode == RECORD_TYPE_CODE:
+         retval = '{'
+         for elem in self.elements:
+            retval+='"{}"{}'.format(elem.name, elem.toString(normalized))
+         retval += '}'
+      elif (self.typeCode == REFERENCE_TYPE_CODE):
+         if isinstance(self.typeReference, DataType):
+            referencedType = self.typeReference
+            if normalized and referencedType.id is not None:
+               return 'T[{:d}]'.format(referencedType.id)
+            return 'T["{}"]'.format(referencedType.name)
+         elif isinstance(self.typeReference, str):
+            return 'T["{}"]'.format(self.typeReference)
+         else:
+            raise RuntimeError('toString called on non-final object, try calling finalize() on the apx.Node object')
+      else:
+         raise NotImplementedError(self.typeCode)
+      if (self.minVal is not None) and (self.maxVal is not None):
+         retval += "({:d},{:d})".format(self.minVal, self.maxVal)
+      if self.arrayLen is not None:
+         retval += "[{:d}]".format(self.arrayLen)
+      return retval
+
 
    @classmethod
    def UInt8(cls, name=None, minVal = None, maxVal = None, arrayLen = None):

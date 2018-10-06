@@ -44,13 +44,13 @@ class Context:
          file_name = os.path.normpath(os.path.join(output_dir, node.name+'.apx'))
          with open(file_name, "w", newline='\n') as fp:
             fp.write("APX/1.2\n") #APX Text header
-            node.write(fp)
+            node.write(fp, normalized)
             fp.write("\n") #Add extra newline at end of file
          file_list.append(file_name)
       return file_list
 
 
-   def dumps(self, normalized=False):
+   def dumps(self, normalized=True):
       """
       returns context as a string
       """

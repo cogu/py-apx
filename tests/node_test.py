@@ -142,6 +142,7 @@ class TestNode(unittest.TestCase):
       self.assertIsInstance(port, apx.RequirePort)
       port = node.append(apx.RequirePort('RecordSignal','{"Name"a[8]"Id"L"Data"S[3]}','={"",0xFFFFFFFF,{0,0,0}}'))
       self.assertIsInstance(port, apx.RequirePort)
+      node.finalize(sort=False)
       lines=node.lines()
       self.assertEqual(len(lines), 9)
       self.assertEqual(lines[0],'N"TestSWC"')
@@ -189,9 +190,9 @@ class TestNode(unittest.TestCase):
    def test_create_node_from_string(self):
       apx_text = """APX/1.2
 N"TestNode"
+T"Repetitions_T"C
 T"SoundId_T"S
 T"Volume_T"C
-T"Repetitions_T"C
 T"SoundRequest_T"{"SoundId"T["SoundId_T"]"Volume"T["Volume_T"]"Repetitions"T["Repetitions_T"]}
 P"SoundRequest"T["SoundRequest_T"]:={65535,255,255}
 """
@@ -227,15 +228,14 @@ P"SoundRequest"T["SoundRequest_T"]:={65535,255,255}
    def test_copy_data_type_between_nodes_when_type_is_record_with_references(self):
       apx_text = """APX/1.2
 N"TestNode1"
+T"Repetitions_T"C
 T"SoundId_T"S
 T"Volume_T"C
-T"Repetitions_T"C
 T"SoundRequest_T"{"SoundId"T["SoundId_T"]"Volume"T["Volume_T"]"Repetitions"T["Repetitions_T"]}
 P"SoundRequest"T["SoundRequest_T"]:={65535,255,255}
 """
       node1 = apx.Node.from_text(apx_text)
       self.assertIsInstance(node1, apx.Node)
-      node1.finalize()
       node2 = apx.Node('MyCopy')
       self.assertIsInstance(node2, apx.Node)
       type1 = node1.find('SoundRequest_T')
@@ -246,9 +246,9 @@ P"SoundRequest"T["SoundRequest_T"]:={65535,255,255}
    def test_copy_ports_between_nodes(self):
       apx_text = """APX/1.2
 N"TestNode1"
+T"Repetitions_T"C
 T"SoundId_T"S
 T"Volume_T"C
-T"Repetitions_T"C
 T"SoundRequest_T"{"SoundId"T["SoundId_T"]"Volume"T["Volume_T"]"Repetitions"T["Repetitions_T"]}
 P"SoundRequest"T["SoundRequest_T"]:={65535,255,255}
 """
@@ -261,9 +261,17 @@ P"SoundRequest"T["SoundRequest_T"]:={65535,255,255}
       self.assertIsInstance(port1, apx.ProvidePort)
       port2 = node2.add_port_from_node(node1, port1)
       self.assertIsInstance(port2, apx.ProvidePort)
-      node2.finalize()
+      node2.finalize(sort=True)
       result = apx.Context().append(node2).dumps(normalized=True)
-      print(result)
+      expected = """APX/1.2
+N"MyCopy"
+T"Repetitions_T"C
+T"SoundId_T"S
+T"SoundRequest_T"{"SoundId"T[1]"Volume"T[3]"Repetitions"T[0]}
+T"Volume_T"C
+P"SoundRequest"T[2]:={65535,255,255}
+"""
+      self.assertEqual(expected, result)
 
 if __name__ == '__main__':
     unittest.main()

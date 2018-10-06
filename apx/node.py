@@ -171,7 +171,6 @@ class Node:
 
    def add_type(self, dataType):
       if dataType.name not in self.dataTypeMap:
-         dataType.id=len(self.dataTypes)
          dataType.dsg.resolve_data_element(self.dataTypes)
          self.dataTypeMap[dataType.name]=dataType
          self.dataTypes.append(dataType)
@@ -193,7 +192,7 @@ class Node:
       self.providePorts.append(port)
       return port
 
-   def write(self, fp):
+   def write(self, fp, normalized=True):
       """
       writes node as text in fp
       """
@@ -201,11 +200,11 @@ class Node:
       for dataType in self.dataTypes:
          print(str(dataType), file=fp)
       for port in self.providePorts:
-         print(str(port), file=fp)
+         print(port.to_string(normalized), file=fp)
       for port in self.requirePorts:
-         print(str(port), file=fp)
+         print(port.to_string(normalized), file=fp)
 
-   def lines(self, normalized=None):
+   def lines(self, normalized=True):
       """
       returns context as list of strings (one line at a time)
       """
@@ -213,9 +212,9 @@ class Node:
       for dataType in self.dataTypes:
          lines.append(str(dataType))
       for port in self.providePorts:
-         lines.append(str(port))
+         lines.append(port.to_string(normalized))
       for port in self.requirePorts:
-         lines.append(str(port))
+         lines.append(port.to_string(normalized))
       return lines
 
    def mirror(self, name=None):
@@ -309,8 +308,25 @@ class Node:
          if port.dsg.dataElement.isReference:
             port.resolve_type(self.dataTypes)
 
-   def finalize(self):
+   def finalize(self, sort=False):
       if not self.isFinalized:
          self.resolve_types()
+         if sort:
+            self.sort_elements()
+         self.set_type_ids()
          self.isFinalized = True
+
+   def sort_elements(self):
+      kfunc = lambda x: x.name
+      if len(self.dataTypes) > 0:
+         self.dataTypes = sorted(self.dataTypes, key=kfunc)
+      if len(self.requirePorts) > 0:
+         self.requirePorts = sorted(self.requirePorts, key=kfunc)
+      if len(self.providePorts) > 0:
+         self.providePorts = sorted(self.providePorts, key=kfunc)
+
+   def set_type_ids(self):
+      for i,data_type in enumerate(self.dataTypes):
+         data_type.id = i
+
 
