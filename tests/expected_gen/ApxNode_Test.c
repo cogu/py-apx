@@ -38,9 +38,9 @@ static const char *m_apxDefinitionData=
 "T\"SoundRequest_T\"{\"SoundId\"S\"Volume\"C}\n"
 "P\"U16ARPort\"S[4]:={65535, 65535, 65535, 65535}\n"
 "P\"U32Port\"L:=4294967295\n"
-"R\"U8Port\"C:=255\n"
-"R\"U8ARPort\"C[3]:={255, 255, 255}\n"
 "R\"SoundRequest\"T[0]:={65535,255}\n"
+"R\"U8ARPort\"C[3]:={255, 255, 255}\n"
+"R\"U8Port\"C:=255\n"
 "\n";
 
 //////////////////////////////////////////////////////////////////////////////
@@ -63,10 +63,15 @@ apx_nodeData_t * ApxNode_GetNodeData_Test(void)
    return &m_nodeData;
 }
 
-Std_ReturnType ApxNode_Read_Test_U8Port(uint8 *val)
+Std_ReturnType ApxNode_Read_Test_SoundRequest(SoundRequest_T *val)
 {
+   uint8 *p;
    apx_nodeData_lockInPortData(&m_nodeData);
-   *val = (uint8) m_inPortdata[0];
+   p=&m_inPortdata[0];
+   val->SoundId = (uint16) unpackLE(p,(uint8) sizeof(uint16));
+   p+=(uint8) sizeof(uint16);
+   val->Volume = (uint8) unpackLE(p,(uint8) sizeof(uint8));
+   p+=(uint8) sizeof(uint8);
    apx_nodeData_unlockInPortData(&m_nodeData);
    return E_OK;
 }
@@ -76,7 +81,7 @@ Std_ReturnType ApxNode_Read_Test_U8ARPort(uint8 *val)
    uint8 *p;
    uint8 i;
    apx_nodeData_lockInPortData(&m_nodeData);
-   p=&m_inPortdata[1];
+   p=&m_inPortdata[3];
    for(i=0;i<3;i++)
    {
       val[i] = (uint8) unpackLE(p,(uint8) sizeof(uint8));
@@ -86,15 +91,10 @@ Std_ReturnType ApxNode_Read_Test_U8ARPort(uint8 *val)
    return E_OK;
 }
 
-Std_ReturnType ApxNode_Read_Test_SoundRequest(SoundRequest_T *val)
+Std_ReturnType ApxNode_Read_Test_U8Port(uint8 *val)
 {
-   uint8 *p;
    apx_nodeData_lockInPortData(&m_nodeData);
-   p=&m_inPortdata[4];
-   val->SoundId = (uint16) unpackLE(p,(uint8) sizeof(uint16));
-   p+=(uint8) sizeof(uint16);
-   val->Volume = (uint8) unpackLE(p,(uint8) sizeof(uint8));
-   p+=(uint8) sizeof(uint8);
+   *val = (uint8) m_inPortdata[6];
    apx_nodeData_unlockInPortData(&m_nodeData);
    return E_OK;
 }

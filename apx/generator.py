@@ -154,7 +154,7 @@ class NodeGenerator:
         self.has_callbacks = True if (callbacks is not None) else False
 
         if not node.isFinalized:
-            node.finalize()
+            node.finalize_sorted()
 
         source_dir = output_dir
         if header_dir is None:

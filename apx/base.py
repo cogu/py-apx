@@ -126,13 +126,13 @@ class Port:
       self.id = None
 
    def __str__(self):
-      return self.to_string(True)
+      return self.to_string(False)
 
    def to_string(self, normalized):
       if self.attr is not None:
-         return '%s"%s"%s:%s'%(self.portType, self.name, self.dsg.toString(normalized), str(self.attr))
+         return '%s"%s"%s:%s'%(self.portType, self.name, self.dsg.to_string(normalized), str(self.attr))
       else:
-         return '%s"%s"%s'%(self.portType, self.name, self.dsg.toString(normalized))
+         return '%s"%s"%s'%(self.portType, self.name, self.dsg.to_string(normalized))
 
 
    def resolve_type(self, typeList):
@@ -164,11 +164,10 @@ class RequirePort(Port):
       super().__init__('R',name, dataSignature, attributes)
 
    def mirror(self):
-      return ProvidePort(self.name, str(self.dsg), str(self.attr) if self.attr is not None else None)
+      return ProvidePort(self.name, self.dsg.to_string(normalized=True), str(self.attr) if self.attr is not None else None)
 
    def clone(self):
-      return RequirePort(self.name, str(self.dsg), str(self.attr) if self.attr is not None else None)
-
+      return RequirePort(self.name, self.dsg.to_string(normalized=True), str(self.attr) if self.attr is not None else None)
 
 class ProvidePort(Port):
    """
@@ -195,16 +194,19 @@ class DataType:
       self.id = None
 
    def __str__(self):
+      return self.to_string()
+
+   def to_string(self, normalized=False):
       if self.attr is not None:
-         return 'T"%s"%s:%s'%(self.name, str(self.dsg), str(self.attr))
+         return 'T"%s"%s:%s'%(self.name, self.dsg.to_string(normalized), str(self.attr))
       else:
-         return 'T"%s"%s'%(self.name, str(self.dsg))
+         return 'T"%s"%s'%(self.name, self.dsg.to_string(normalized))
 
    def clone(self):
       if self.attr is not None:
-         return DataType(self.name, self.dsg.toString(normalized=False), str(self.attr) )
+         return DataType(self.name, self.dsg.to_string(normalized=True), str(self.attr) )
       else:
-         return DataType(self.name, self.dsg.toString(normalized=False) )
+         return DataType(self.name, self.dsg.to_string(normalized=True) )
 
    @property
    def dataElement(self):
@@ -228,10 +230,10 @@ class DataSignature:
       self.parent=parent
 
    def __str__(self):
-      return self.dataElement.toString()
+      return self.dataElement.to_string()
 
-   def toString(self, normalized=True):
-      return self.dataElement.toString(normalized)
+   def to_string(self, normalized=False):
+      return self.dataElement.to_string(normalized)
 
    def packLen(self):
       result=0
@@ -456,25 +458,25 @@ class DataElement:
    def isReference(self):
       return self.typeCode == REFERENCE_TYPE_CODE
 
-   def toString(self, normalized = True):
+   def to_string(self, normalized = False):
       retval = None
       if (self.typeCode >= UINT8_TYPE_CODE) and (self.typeCode <= STRING_TYPE_CODE):
          retval = _typeCodeToStr(self.typeCode)
       elif self.typeCode == RECORD_TYPE_CODE:
          retval = '{'
          for elem in self.elements:
-            retval+='"{}"{}'.format(elem.name, elem.toString(normalized))
+            retval+='"{}"{}'.format(elem.name, elem.to_string(normalized))
          retval += '}'
       elif (self.typeCode == REFERENCE_TYPE_CODE):
          if isinstance(self.typeReference, DataType):
             referencedType = self.typeReference
-            if normalized and referencedType.id is not None:
+            if not normalized and referencedType.id is not None:
                return 'T[{:d}]'.format(referencedType.id)
             return 'T["{}"]'.format(referencedType.name)
          elif isinstance(self.typeReference, str):
             return 'T["{}"]'.format(self.typeReference)
          else:
-            raise RuntimeError('toString called on non-final object, try calling finalize() on the apx.Node object')
+            raise RuntimeError('to_string called on non-final object, try calling finalize() on the apx.Node object')
       else:
          raise NotImplementedError(self.typeCode)
       if (self.minVal is not None) and (self.maxVal is not None):

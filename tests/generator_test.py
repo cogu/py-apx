@@ -6,7 +6,7 @@ import time
 import shutil
 
 class TestApxGenerator(unittest.TestCase):
-    
+
     def test_ctypename(self):
         dsg = apx.DataSignature('C')
         self.assertEqual(dsg.ctypename(),'uint8')
@@ -20,7 +20,7 @@ class TestApxGenerator(unittest.TestCase):
         self.assertEqual(dsg.ctypename(),'uint32')
         dsg = apx.DataSignature('l')
         self.assertEqual(dsg.ctypename(),'sint32')
-    
+
     def test_code_generator(self):
         node = apx.Node("Test")
         node.append(apx.DataType('SoundRequest_T','{"SoundId"S"Volume"C}'))
@@ -29,7 +29,7 @@ class TestApxGenerator(unittest.TestCase):
         node.append(apx.RequirePort('SoundRequest','T["SoundRequest_T"]', '={65535,255}'))
         node.append(apx.ProvidePort('U16ARPort','S[4]','={65535, 65535, 65535, 65535}'))
         node.append(apx.ProvidePort('U32Port','L','=4294967295'))
-        
+
         output_dir = 'derived'
         output_dir_full = os.path.join(os.path.dirname(__file__),output_dir)
         if not os.path.exists(output_dir_full):

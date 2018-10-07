@@ -262,7 +262,7 @@ P"SoundRequest"T["SoundRequest_T"]:={65535,255,255}
       port2 = node2.add_port_from_node(node1, port1)
       self.assertIsInstance(port2, apx.ProvidePort)
       node2.finalize(sort=True)
-      result = apx.Context().append(node2).dumps(normalized=True)
+      result = apx.Context().append(node2).dumps()
       expected = """APX/1.2
 N"MyCopy"
 T"Repetitions_T"C
