@@ -15,6 +15,6 @@ Prerequisites
 
 Documentation
 -------------
-Documentation can be found `here <http://apx.readthedocs.io/en/latest/>`_
+Documentation can be found `here <http://py-apx.readthedocs.io/en/latest/>`_
 
 
