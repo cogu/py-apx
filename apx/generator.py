@@ -278,9 +278,9 @@ class NodeGenerator:
                 else:
                     #use absolute addressing using buf variable and offset
                     if operation == 'pack':
-                        code.append(C.statement('memcpy(&%s[%d],%s,%d)'%(buf.name,offset,valname, dataElement.arrayLen),indent=indent))
+                        code.append(C.statement('memcpy(&%s[%d],%s,%d)'%(buf.name,offset,valname, strDataLen),indent=indent))
                         if dataElement.strNullTerminator:
-                            code.append(C.statement("%s[%d]='\\0'"%(buf.name,offset+dataElement.arrayLen),indent=indent))
+                            code.append(C.statement("%s[%d]='\\0'"%(buf.name,offset+strDataLen),indent=indent))
                     else:
                         code.append(C.statement('memcpy(%s,&%s[%d],%d)'%(valname,buf.name,offset, strDataLen),indent=indent))
                         #TODO: add support for disabling/enabling usage of null-terminator in NodeGenerator data unpacking
