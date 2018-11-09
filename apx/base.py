@@ -190,7 +190,7 @@ class DataType:
    def __init__(self, name, dataSignature, attributes=None):
       self.name = name
       self.dsg = DataSignature(dataSignature, None, self)
-      self.attr = attributes
+      self.attr = TypeAttribute(attributes) if attributes is not None else None
       self.id = None
 
    def __str__(self):
@@ -359,6 +359,12 @@ class DataSignature:
          typeCodeInt = [UINT8_TYPE_CODE, UINT16_TYPE_CODE, UINT32_TYPE_CODE, UINT64_TYPE_CODE,
                      SINT8_TYPE_CODE, SINT16_TYPE_CODE, SINT32_TYPE_CODE, SINT64_TYPE_CODE,
                      STRING_TYPE_CODE]
+         typeMinVal = [0, 0, 0, 0,
+                     -128, -32768, -2147483648, None,                     
+                     None]
+         typeMaxVal = [255, 65535, 0xFFFFFFFF, None,
+                     127, 32767, 2147483647, None,                     
+                     None]
          try:
             i = typeCodesChar.index(c)
          except ValueError:
@@ -369,8 +375,8 @@ class DataSignature:
                if data is None:
                   raise ParseError("Expecting ')' near: "+remain)
                (minVal,maxVal) = DataSignature._parseExtendedTypeCode(data)
-         else:
-            (minVal,maxVal) = (None, None)
+         else:            
+            (minVal,maxVal) = (typeMinVal[i], typeMaxVal[i])
          if (len(remain)>0) and (remain[0]=='['):
                (value,remain)=match_pair(remain[0:],'[',']')
                if value is None:
@@ -563,7 +569,7 @@ class DataElement:
             element.resolve_type(typeList)
       return self
 
-   def resolve_data_element(self, typeList):
+   def resolve_data_element(self):
       dataElement, count = self,0
       while(count < MAX_RECURSE_DEPTH):
          count+=1
@@ -736,7 +742,7 @@ class PortAttribute:
                return (InitValue.String(m.group(3)),remain)
       return (None,remain)
 
-class TypeAttribute(object):
+class TypeAttribute:
    """
    Type attributes are attributes declared on a line starting with letter 'T'
    """
@@ -759,6 +765,9 @@ class TypeAttribute(object):
                   self.valueTable.append(name)
          else:
             raise ParseError
+    
+   def __str__(self):
+      return self.str
 
 
 class AutosarPort:
