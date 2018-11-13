@@ -217,7 +217,7 @@ class NodeGenerator:
 
     def genPackUnpackInteger(self, code, buf, operation, valname, dataElement, localvar, offset, indent):
         dataLen=0
-        resolvedElement = dataElement.resolve_data_element(self.node.dataTypes)
+        resolvedElement = dataElement.resolve_data_element()
         if resolvedElement.typeCode==apx.SINT8_TYPE_CODE or resolvedElement.typeCode==apx.UINT8_TYPE_CODE:
             dataLen=1
             basetype='sint8' if resolvedElement.typeCode==apx.SINT8_TYPE_CODE else 'uint8'
@@ -250,8 +250,13 @@ class NodeGenerator:
                     code.append(C.statement('*%s = (%s) unpackLE(&%s[%d],(uint8) %du)'%(valname, basetype, buf.name, offset, dataLen),indent=indent))
         return dataLen
 
-    def genPackUnpackItem(self, code, buf, operation, val, dsg, localvar, offset, indent, indentStep):
-        dataElement = dsg.resolve_data_element(self.node.dataTypes)
+    def genPackUnpackItem(self, code, buf, operation, val, elem, localvar, offset, indent, indentStep):
+        if isinstance(elem, apx.DataSignature):
+            dataElement = elem.resolve_data_element(self.node.dataTypes)
+        elif isinstance(elem, apx.DataElement):
+            dataElement = elem
+        else:
+            raise NotImplementedError(type(elem))
         packLen=0
         if isinstance(val,C.variable):
             valname=val.name
@@ -330,7 +335,7 @@ class NodeGenerator:
                 indent-=indentStep
                 code.append(block)
         else:
-            packLen=self.genPackUnpackInteger(code, buf, operation, valname, dsg, localvar, offset, indent)
+            packLen=self.genPackUnpackInteger(code, buf, operation, valname, elem, localvar, offset, indent)
         return packLen
 
     def genPackUnpackFunc(self, func, buf, offset, operation, dsg, indent, indentStep):

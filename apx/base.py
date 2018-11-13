@@ -359,12 +359,7 @@ class DataSignature:
          typeCodeInt = [UINT8_TYPE_CODE, UINT16_TYPE_CODE, UINT32_TYPE_CODE, UINT64_TYPE_CODE,
                      SINT8_TYPE_CODE, SINT16_TYPE_CODE, SINT32_TYPE_CODE, SINT64_TYPE_CODE,
                      STRING_TYPE_CODE]
-         typeMinVal = [0, 0, 0, 0,
-                     -128, -32768, -2147483648, None,                     
-                     None]
-         typeMaxVal = [255, 65535, 0xFFFFFFFF, None,
-                     127, 32767, 2147483647, None,                     
-                     None]
+         
          try:
             i = typeCodesChar.index(c)
          except ValueError:
@@ -375,8 +370,8 @@ class DataSignature:
                if data is None:
                   raise ParseError("Expecting ')' near: "+remain)
                (minVal,maxVal) = DataSignature._parseExtendedTypeCode(data)
-         else:            
-            (minVal,maxVal) = (typeMinVal[i], typeMaxVal[i])
+         else:
+            (minVal,maxVal) = (None, None)            
          if (len(remain)>0) and (remain[0]=='['):
                (value,remain)=match_pair(remain[0:],'[',']')
                if value is None:
@@ -415,7 +410,19 @@ class DataElement:
    """
    def __init__(self, name=None, typeCode = INVALID_TYPE_CODE, minVal = None, maxVal = None, arrayLen = None, elements = None, reference=None):
       self.name = name
+      self.typeMinVal = None
+      self.typeMaxVal = None
+
       self.strNullTerminator = True #TODO: make this configurable in the future
+      typeCodeInt = [UINT8_TYPE_CODE, UINT16_TYPE_CODE, UINT32_TYPE_CODE, UINT64_TYPE_CODE,
+                     SINT8_TYPE_CODE, SINT16_TYPE_CODE, SINT32_TYPE_CODE, SINT64_TYPE_CODE,
+                     STRING_TYPE_CODE]
+      typeMinVal = [0, 0, 0, 0,
+                     -128, -32768, -2147483648, None, #python has issues with 64-bit integer literals, ignore for now
+                     0]
+      typeMaxVal = [255, 65535, 0xFFFFFFFF, None, #python has issues with 64-bit integer literals, ignore for now
+                     127, 32767, 2147483647, None,                     
+                     255]
       if reference is not None:
          self.typeCode = REFERENCE_TYPE_CODE
          assert(isinstance(reference, (int, str, DataType)))
@@ -427,6 +434,9 @@ class DataElement:
          self.typeCode = typeCode
          self.minVal = minVal
          self.maxVal = maxVal
+         if typeCode < RECORD_TYPE_CODE:         
+            self.typeMinVal = typeMinVal[typeCode] #this can be used in case user hasn't specifically set self.minVal
+            self.typeMaxVal = typeMaxVal[typeCode] #this can be used in case user hasn't specifically set self.maxVal         
          self.arrayLen = arrayLen
          self.typeReference = None
 
@@ -450,11 +460,11 @@ class DataElement:
           self._arrayLen = None
 
    def isArray(self, typeList = None):
-      dataElement = self.resolve_data_element(typeList)
+      dataElement = self.resolve_data_element()
       return dataElement.arrayLen is not None
 
    def isRecord(self, typeList = None):
-      dataElement = self.resolve_data_element(typeList)
+      dataElement = self.resolve_data_element()
       return dataElement.typeCode == RECORD_TYPE_CODE
 
    def isComplexType(self, typeList = None):
@@ -463,6 +473,18 @@ class DataElement:
    @property
    def isReference(self):
       return self.typeCode == REFERENCE_TYPE_CODE
+   
+   @property
+   def minValWithDefault(self):
+      if self.minVal is not None:
+         return self.minVal
+      return self.typeMinVal
+
+   @property
+   def maxValWithDefault(self):
+      if self.maxVal is not None:
+         return self.maxVal
+      return self.typeMaxVal
 
    def to_string(self, normalized = False):
       retval = None
@@ -833,7 +855,11 @@ class AutosarDataType(DataType):
          values=[]
          for elem in typeSemantics.elements:
             assert(isinstance(elem,autosar.datatype.CompuConstElement))
-            values.append(elem.textValue)
+            if elem.lowerLimit==elem.upperLimit:
+               values.append(elem.textValue)
+            else:
+               num_items = (elem.upperLimit+1)-elem.lowerLimit               
+               values.extend([elem.textValue+str(i) for i in range(1, num_items+1)])
          v=','.join(['"%s"'%x for x in values])
          return "VT(%s)"%v
       return None

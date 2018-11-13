@@ -15,7 +15,7 @@ N"TestSWC"
 T"Percent_T"C
 T"CoolantTemp_T"C
 T"InactiveActive_T"C(0,3):VT("InactiveActive_Inactive","InactiveActive_Active","InactiveActive_Error","InactiveActive_NotAvailable")
-T"OnOff_T"C(0,3):VT("OnOff_Off","OnOff_On","OnOff_Error","OnOff_NotAvailable"
+T"OnOff_T"C(0,3):VT("OnOff_Off","OnOff_On","OnOff_Error","OnOff_NotAvailable")
 T"EngineSpeed_T"S
 T"VehicleSpeed_T"S
 R"FuelLevel"T[0]:=255
