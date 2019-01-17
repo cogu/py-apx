@@ -124,7 +124,10 @@ Std_ReturnType ApxNode_Write_Test_U32Port(uint32 val)
 
 void Test_inPortDataWritten(void *arg, apx_nodeData_t *nodeData, uint32_t offset, uint32_t len)
 {
-
+   (void)arg;
+   (void)nodeData;
+   (void)offset;
+   (void)len;
 }
 //////////////////////////////////////////////////////////////////////////////
 // LOCAL FUNCTIONS

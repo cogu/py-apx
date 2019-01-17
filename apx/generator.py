@@ -574,7 +574,11 @@ class NodeGenerator:
             indent+=indentStep
             body=C.block(innerIndent=indent)
 
+            body.append(C.statement('(void)arg'))
+            body.append(C.statement('(void)nodeData'))
+
             if len(self.callbacks.code_fragments)>0:
+                body.append('')
                 body.append(C.line('union data_tag'))
                 body.append(C.line('{'))
                 indent+=indentStep
@@ -601,6 +605,9 @@ class NodeGenerator:
                 body.append(switch_body)
                 body.append(C.line('}'))
                 indent-=indentStep
+            else:
+                body.append(C.statement('(void)offset'))
+                body.append(C.statement('(void)len'))
 
             code.append(body)
             indent-=indentStep
