@@ -5,6 +5,10 @@ import sys
 import autosar
 import autosar.constant
 import os
+from collections import namedtuple
+
+TypeInfo = namedtuple('TypeInfo', ['variable_name', 'type_name', 'array_len'])
+
 
 def _genCommentHeader(comment):
     lines = []
@@ -31,6 +35,7 @@ class SignalInfo:
         self.func=func
         self.dsg=dsg
         self.dataElement=dataElement
+        self.arrayLen=dataElement.arrayLen
 
         if init_value is not None:
             self.init_data = dsg.createInitData(init_value)
@@ -51,7 +56,7 @@ class CallbackInfo:
     A class that represents everything we need to know about user-defined callbacks
     """
     def __init__(self, indent=3):
-        self.local_types = {}
+        self.local_vars = []
         self.defines = {'offset':{}, 'length':{}}
         self.code_fragments = {}
         self.data_vars = None
@@ -62,15 +67,13 @@ class CallbackInfo:
 
     def create(self, port_info, callback_name=None):
         """
-        Creates a new callback mapping. variable info must be of type SignalInfo.
+        Creates a new callback mapping. port info must be of type SignalInfo.
         When callback_name is None, no user-defined callback is generated
         """
-        type_name=None
+        type_name = port_info.func.args[0].typename
         if callback_name is not None:
-            type_name = port_info.func.args[0].typename
-            if (type_name not in self.local_types):
-                self.local_types[type_name] = []
-            self.local_types[type_name].append(port_info.name)
+            type_info = TypeInfo(port_info.name, type_name, port_info.arrayLen)
+            self.local_vars.append(type_info)
         port_offset_define = C.define("APX_RX_OFFSET_%s"%(port_info.name.upper()), port_info.offset)
         port_length_define = C.define("APX_RX_LEN_%s"%(port_info.name.upper()), port_info.pack_len)
         self.defines['offset'][port_info.name] = port_offset_define
@@ -79,13 +82,10 @@ class CallbackInfo:
 
 
     def finalize(self):
-        self.data_vars = {}
-        for type_name, port_names in self.local_types.items():
-            if len(port_names) == 1:
-                var_name = port_names[0]
-            else:
-                var_name = type_name+'Val'
-            self.data_vars[type_name] = C.variable(var_name, type_name)
+        self.data_vars = []
+        for type_info in sorted(self.local_vars, key=lambda type_info: type_info.variable_name):
+            c_var = C.variable(type_info.variable_name, type_info.type_name, array=type_info.array_len)
+            self.data_vars.append(c_var)
         for elem in self.pending:
             self._generate_code_fragment(*elem)
         self.pending=[]
@@ -96,10 +96,10 @@ class CallbackInfo:
         code = C.sequence()
         code.append(C.line('case %s:'%port_offset_define.left))
         if callback_name is not None:
-            var = self.data_vars[type_name]
-            code.append(C.statement('(void) %s(&data.%s)'%(port_info.func.name, var.name), indent=self.indent))
+            idx0_str = '' if port_info.arrayLen is None else '[0]'
+            code.append(C.statement('(void) %s(&data.%s%s)' % (port_info.func.name, port_info.name, idx0_str), indent=self.indent))
             modifier='&' if port_info.dsg.isComplexType() else ''
-            code.append(C.statement(C.fcall(callback_name, [modifier+'data.'+var.name]), indent=self.indent))
+            code.append(C.statement(C.fcall(callback_name, [modifier + 'data.' + port_info.name + idx0_str]), indent=self.indent))
         code.append(C.statement('offset += %s'%port_length_define.left, indent=self.indent))
         code.append(C.statement('break', indent=self.indent))
         self.code_fragments[port_info.offset]=code
@@ -340,7 +340,6 @@ class NodeGenerator:
 
     def genPackUnpackFunc(self, func, buf, offset, operation, dsg, indent, indentStep):
         indent+=indentStep
-        packLen=0
         code=C.block()
         localvar={'buf':'m_outPortdata'}
         val=func.args[0]
@@ -582,8 +581,8 @@ class NodeGenerator:
                 body.append(C.line('union data_tag'))
                 body.append(C.line('{'))
                 indent+=indentStep
-                for key in sorted(self.callbacks.data_vars.keys()):
-                    body.append(C.statement(self.callbacks.data_vars[key], indent=indent))
+                for c_var in self.callbacks.data_vars:
+                    body.append(C.statement(c_var, indent=indent))
                 indent-=indentStep
                 body.append(C.statement('} data'))
                 end_offset_var = C.variable('endOffset', 'uint32_t')

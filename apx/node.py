@@ -1,6 +1,5 @@
 import autosar
 import apx
-import math
 import os
 from copy import deepcopy
 from apx.parser import apx_split_line, Parser
@@ -165,7 +164,7 @@ class Node:
             else:
                 raise ValueError(parts[0])
         else:
-            raise ValueError(type(port))
+            raise ValueError(type(item))
 
 
     def add_type(self, new_type):
@@ -293,7 +292,7 @@ class Node:
         if from_data_element.typeCode == apx.REFERENCE_TYPE_CODE:
             from_data_type = from_data_element.typeReference
             if not isinstance(from_data_type, apx.base.DataType):
-                raise RunTimeError('Node.finalize() method must be called before this method can be used')
+                raise RuntimeError('Node.finalize() method must be called before this method can be used')
             to_data_type = self.find(from_data_type.name)
             if to_data_type is None:
                 to_data_type = self.add_data_type_from_node(from_node, from_data_type)

@@ -630,7 +630,7 @@ class DataElement:
          if (initValue.valueType != VTYPE_LIST):
             raise ValueError('invalid init value type: list expected')
          if len(initValue.elements) != len(dataElement.elements):
-            raise ValueError('Incorrect number of record elements in init_value: got %d, expected %s'%(len(initValue.elements), len(self.dataElement.elements)))
+            raise ValueError('Incorrect number of record elements in init_value: got %d, expected %s'%(len(initValue.elements), len(dataElement.elements)))
          for i,childElement in enumerate(dataElement.elements):
             data.extend(DataElement._createInitDataInner(childElement, initValue.elements[i]))
       elif (dataElement.typeCode == STRING_TYPE_CODE):

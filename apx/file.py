@@ -37,7 +37,7 @@ class File(remotefile.File):
       reads data from the given offset, returns bytes array or None in case of error
       """
       if(offset < 0) or (offset+length>len(self.data) ):
-         print('file read outside file boundary detected, file=%s, off=%d, len=%d'%(self.name, offset, len(data)),file=sys.stderr)
+         print('file read outside file boundary detected, file=%s, off=%d, len=%d'%(self.name, offset, len(self.data)),file=sys.stderr)
          return None
       self.dataLock.acquire()
       retval = bytes(self.data[offset:offset+length])
