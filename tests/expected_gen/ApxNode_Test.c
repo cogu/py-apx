@@ -107,9 +107,7 @@ Std_ReturnType ApxNode_Read_Test_RU8ARPort(uint8 *val)
 
 Std_ReturnType ApxNode_Read_Test_RU8Port(uint8 *val)
 {
-   apx_nodeData_lockInPortData(&m_nodeData);
    *val = (uint8) m_inPortdata[13];
-   apx_nodeData_unlockInPortData(&m_nodeData);
    return E_OK;
 }
 

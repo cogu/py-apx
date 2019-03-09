@@ -365,14 +365,16 @@ class NodeGenerator:
         if operation=='pack':
             code.append(C.statement('apx_nodeData_lockOutPortData(&m_nodeData)', indent=indent))
         else:
-            code.append(C.statement('apx_nodeData_lockInPortData(&m_nodeData)', indent=indent))
+            if packLen > 1:
+                code.append(C.statement('apx_nodeData_lockInPortData(&m_nodeData)', indent=indent))
         if 'bufptr' in localvar:
             code.append(C.statement('%s=&%s[%d]'%(localvar['bufptr'].name,buf.name,offset),indent=indent))
         code.extend(codeBlock)
         if operation=='pack':
             code.append(C.statement(C.fcall('outPortData_writeCmd', params=[offset, packLen]),indent=indent))
         else:
-            code.append(C.statement('apx_nodeData_unlockInPortData(&m_nodeData)', indent=indent))
+            if packLen > 1:
+                code.append(C.statement('apx_nodeData_unlockInPortData(&m_nodeData)', indent=indent))
         code.append(C.statement('return E_OK',indent=indent))
         indent-=indentStep
         return code,packLen
