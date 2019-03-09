@@ -230,24 +230,31 @@ class NodeGenerator:
         else:
             raise NotImplementedError(resolvedElement.typeCode)
         if 'bufptr' in localvar:
-            #relative addressing
-            if operation == 'pack':
-                code.append(C.statement('packLE(%s,(uint32) %s,(uint8) sizeof(%s))'%(localvar['bufptr'].name,valname,basetype),indent=indent))
+            # relative addressing
+            if dataLen == 1:
+                if operation == 'pack':
+                    code.append(C.statement('*%s=(uint8) %s' % (localvar['bufptr'].name, valname), indent=indent))
+                else:  # unpack
+                    code.append(C.statement('%s = (%s) *%s' % (valname, basetype, localvar['bufptr'].name), indent=indent))
+                code.append(C.statement('%s++' % (localvar['bufptr'].name), indent=indent))
             else:
-                code.append(C.statement('%s = (%s) unpackLE(%s,(uint8) sizeof(%s))'%(valname, basetype, localvar['bufptr'].name, basetype), indent=indent))
-            code.append(C.statement('%s+=(uint8) sizeof(%s)'%(localvar['bufptr'].name,basetype),indent=indent))
+                if operation == 'pack':
+                    code.append(C.statement('packLE(%s,(uint32) %s,(uint8) sizeof(%s))' % (localvar['bufptr'].name, valname, basetype), indent=indent))
+                else:
+                    code.append(C.statement('%s = (%s) unpackLE(%s,(uint8) sizeof(%s))' % (valname, basetype, localvar['bufptr'].name, basetype), indent=indent))
+                code.append(C.statement('%s+=sizeof(%s)' % (localvar['bufptr'].name, basetype), indent=indent))
         else:
-            #absolute addressing
-            if dataLen==1:
+            # absolute addressing
+            if dataLen == 1:
                 if operation == 'pack':
-                    code.append(C.statement("%s[%d]=(uint8) %s"%(buf.name,offset,valname),indent=indent))
-                else: #unpack
-                    code.append(C.statement("*%s = (%s) %s[%d]"%(valname, basetype, buf.name, offset),indent=indent))
+                    code.append(C.statement("%s[%d]=(unit8) %s" % (buf.name, offset, valname), indent=indent))
+                else:  # unpack
+                    code.append(C.statement("*%s = (%s) %s[%d]" % (valname, basetype, buf.name, offset), indent=indent))
             else:
                 if operation == 'pack':
-                    code.append(C.statement('packLE(&%s[%d],(uint32) %s,(uint8) %du)'%(buf.name,offset,valname,dataLen),indent=indent))
-                else: #unpack
-                    code.append(C.statement('*%s = (%s) unpackLE(&%s[%d],(uint8) %du)'%(valname, basetype, buf.name, offset, dataLen),indent=indent))
+                    code.append(C.statement('packLE(&%s[%d],(uint32) %s,(uint8) sizeof(%s))' % (buf.name, offset, valname, basetype), indent=indent))
+                else:
+                    code.append(C.statement('*%s = (%s) unpackLE(&%s[%d],(uint8) sizeof(%s))' % (valname, basetype, buf.name, offset, basetype), indent=indent))
         return dataLen
 
     def genPackUnpackItem(self, code, buf, operation, val, elem, localvar, offset, indent, indentStep):

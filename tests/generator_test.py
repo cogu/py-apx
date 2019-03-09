@@ -24,11 +24,15 @@ class TestApxGenerator(unittest.TestCase):
     def test_code_generator(self):
         node = apx.Node("Test")
         node.append(apx.DataType('SoundRequest_T','{"SoundId"S"Volume"C}'))
-        node.append(apx.RequirePort('U8Port','C','=255'))
-        node.append(apx.RequirePort('U8ARPort','C[3]','={255, 255, 255}'))
+        node.append(apx.RequirePort('RS16ARPort','s[3]','={32767, 1, 0}'))
+        node.append(apx.RequirePort('RS32Port','l','=1'))
+        node.append(apx.RequirePort('RU8Port','C','=255'))
+        node.append(apx.RequirePort('RU8ARPort','C[3]','={255, 255, 255}'))
         node.append(apx.RequirePort('SoundRequest','T["SoundRequest_T"]', '={65535,255}'))
-        node.append(apx.ProvidePort('U16ARPort','S[4]','={65535, 65535, 65535, 65535}'))
-        node.append(apx.ProvidePort('U32Port','L','=4294967295'))
+        node.append(apx.ProvidePort('PS8ARPort','c[1]','={1}'))
+        node.append(apx.ProvidePort('PS8Port','c','=0'))
+        node.append(apx.ProvidePort('PU16ARPort','S[4]','={65535, 65535, 65535, 65535}'))
+        node.append(apx.ProvidePort('PU32Port','L','=4294967295'))
 
         output_dir = 'derived'
         output_dir_full = os.path.join(os.path.dirname(__file__),output_dir)
