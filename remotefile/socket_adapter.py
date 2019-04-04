@@ -10,13 +10,15 @@ class TcpSocketAdapter:
     """
     Remotefile TCP socket adapter
     """
-    def __init__(self):
+    def __init__(self, nagle=True):
         self.isConnected = False
         self.isAlive = False
         # a receiveHandler is a class implementing the
         # remotefile.ReceiveHandler interface. Ex. the remotefile.FileManager
         self.receiveHandler = None
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        if not nagle:
+            self.socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, True)
         self.isAcknowledgeSeen = False
 
         def worker():
