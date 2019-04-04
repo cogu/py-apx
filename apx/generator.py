@@ -247,7 +247,7 @@ class NodeGenerator:
             # absolute addressing
             if dataLen == 1:
                 if operation == 'pack':
-                    code.append(C.statement("%s[%d]=(unit8) %s" % (buf.name, offset, valname), indent=indent))
+                    code.append(C.statement("%s[%d]=(uint8) %s" % (buf.name, offset, valname), indent=indent))
                 else:  # unpack
                     code.append(C.statement("*%s = (%s) %s[%d]" % (valname, basetype, buf.name, offset), indent=indent))
             else:
