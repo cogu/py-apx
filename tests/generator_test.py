@@ -34,12 +34,14 @@ class TestApxGenerator(unittest.TestCase):
         node.append(apx.ProvidePort('PU16ARPort','S[4]','={65535, 65535, 65535, 65535}'))
         node.append(apx.ProvidePort('PU32Port','L','=4294967295'))
 
+        callback_map = { 'RU8Port': 'RU8Port_cb_func' }
+
         output_dir = 'derived'
         output_dir_full = os.path.join(os.path.dirname(__file__),output_dir)
         if not os.path.exists(output_dir_full):
             os.makedirs(output_dir_full)
         time.sleep(0.1)
-        apx.NodeGenerator().generate(output_dir_full, node)
+        apx.NodeGenerator().generate(output_dir_full, node, callbacks=callback_map)
         with open (os.path.join(os.path.dirname(__file__), output_dir, 'ApxNode_{0.name}.h'.format(node)), "r") as fp:
             generated=fp.read()
         with open (os.path.join(os.path.dirname(__file__), 'expected_gen', 'ApxNode_{0.name}.h'.format(node)), "r") as fp:
@@ -48,6 +50,11 @@ class TestApxGenerator(unittest.TestCase):
         with open (os.path.join(os.path.dirname(__file__), output_dir, 'ApxNode_{0.name}.c'.format(node)), "r") as fp:
             generated=fp.read()
         with open (os.path.join(os.path.dirname(__file__), 'expected_gen', 'ApxNode_{0.name}.c'.format(node)), "r") as fp:
+            expected=fp.read()
+        self.assertEqual(expected, generated)
+        with open (os.path.join(os.path.dirname(__file__), output_dir, 'ApxNode_{0.name}_Cbk.h'.format(node)), "r") as fp:
+            generated=fp.read()
+        with open (os.path.join(os.path.dirname(__file__), 'expected_gen', 'ApxNode_{0.name}_Cbk.h'.format(node)), "r") as fp:
             expected=fp.read()
         self.assertEqual(expected, generated)
         shutil.rmtree(output_dir_full)

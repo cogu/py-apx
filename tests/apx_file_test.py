@@ -16,19 +16,19 @@ class MockNodeDataHandler:
    def inPortDataWriteNotify(self, file, offset: int, length: int):
       """
       Called by FileManager when it receives a remote write in the node's inPortData file
-      """      
+      """
       self.calls.append(FileWrite(file, offset, length))
 
 class MockFileManager:
    def __init__(self):
       self.calls=[]
-   
+
    def outPortDataWriteNotify(self, file, offset : int, length : int):
       self.calls.append(FileWrite(file, offset, length))
-      
+
 
 class TestApxFile(unittest.TestCase):
-    
+
    def test_input_file(self):
       mockDataHandler = MockNodeDataHandler()
       inFile = apx.InputFile('test1.in', 10)

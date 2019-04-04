@@ -32,7 +32,7 @@ def create_autosar_workspace():
                                                 autosar.DataElement('VehicleSpeed', 'VehicleSpeed_T'))
    components = ws.createPackage('ComponentType', role='ComponentType')
    swc = components.createApplicationSoftwareComponent('Example1')
-   swc.createRequirePort('EngineRunningStatus', 'EngineRunningStatus_I', initValueRef=constants['C_EngineRunningStatus_IV'].ref)   
+   swc.createRequirePort('EngineRunningStatus', 'EngineRunningStatus_I', initValueRef=constants['C_EngineRunningStatus_IV'].ref)
    swc.createRequirePort('VehicleSpeed', 'VehicleSpeed_I', initValueRef=constants['C_VehicleSpeed_IV'].ref)
    swc.createProvidePort('FuelLevelPercent', 'FuelLevelPercent_I', initValueRef=constants['C_FuelLevelPercent_IV'].ref)
    swc.behavior.createRunnable(swc.name+'_Init', portAccess=[x.name for x in swc.providePorts])
@@ -57,7 +57,7 @@ def create_apx_context(ws):
          node = apx.Node().import_autosar_swc(swc)
          context.append(node)
    return context
-   
+
 def generate_apx_node(context, derived_dir):
    node_generator = apx.NodeGenerator()
    for node in context.nodes:
