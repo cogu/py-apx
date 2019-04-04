@@ -52,8 +52,8 @@ class Client:
         if node is not None:
             self.attach_node(node)
 
-    def connect_tcp(self, address, port):
-        self.socketAdapter = remotefile.TcpSocketAdapter()
+    def connect_tcp(self, address, port, nagle=True):
+        self.socketAdapter = remotefile.TcpSocketAdapter(nagle)
         self.socketAdapter.setReceiveHandler(self.fileManager)
         if self.socketAdapter.connect(address, port):
             self.fileManager.start()
