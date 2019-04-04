@@ -582,9 +582,6 @@ class NodeGenerator:
             indent+=indentStep
             body=C.block(innerIndent=indent)
 
-            body.append(C.statement('(void)arg'))
-            body.append(C.statement('(void)nodeData'))
-
             if len(self.callbacks.code_fragments)>0:
                 body.append('')
                 body.append(C.line('union data_tag'))
@@ -597,6 +594,9 @@ class NodeGenerator:
                 end_offset_var = C.variable('endOffset', 'uint32_t')
                 init_expression = '%s + %s'%(self.InPortDataNotifyFunc.args[2].name,self.InPortDataNotifyFunc.args[3].name)
                 body.append(C.statement(str(end_offset_var)+' = '+ init_expression ))
+                body.append('')
+                body.append(C.statement('(void)arg'))
+                body.append(C.statement('(void)nodeData'))
                 body.append('')
                 body.append(C.line('while (offset < endOffset)'))
                 body.append(C.line('{'))
@@ -614,6 +614,8 @@ class NodeGenerator:
                 body.append(C.line('}'))
                 indent-=indentStep
             else:
+                body.append(C.statement('(void)arg'))
+                body.append(C.statement('(void)nodeData'))
                 body.append(C.statement('(void)offset'))
                 body.append(C.statement('(void)len'))
 
