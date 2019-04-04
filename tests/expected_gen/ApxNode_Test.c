@@ -142,7 +142,7 @@ Std_ReturnType ApxNode_Write_Test_PS8ARPort(sint8 *val)
 Std_ReturnType ApxNode_Write_Test_PS8Port(sint8 val)
 {
    apx_nodeData_lockOutPortData(&m_nodeData);
-   m_outPortdata[1]=(unit8) val;
+   m_outPortdata[1]=(uint8) val;
    outPortData_writeCmd(1, 1);
    return E_OK;
 }
