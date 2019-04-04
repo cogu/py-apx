@@ -34,7 +34,7 @@ class TestNodeDataCompile(unittest.TestCase):
       for i in range(9, 27):
          self.assertEqual(node_data.inPortByteMap[i].name, 'RecordSignal')
          self.assertEqual(node_data.inPortByteMap[i].id, 2)
-      
+
       self.assertEqual(len(node_data.outPortDataMap), 4)
       elem = node_data.outPortDataMap[0]
       self.assertEqual(elem.data_offset, 0)
@@ -57,11 +57,11 @@ class TestNodeDataCompile(unittest.TestCase):
                         apx.OPCODE_PACK_U16])
       self.assertEqual(node_data.outPortPrograms[0], expected)
       expected = bytes([apx.OPCODE_PACK_PROG, apx.UINT8_LEN,0,0,0,
-                        apx.OPCODE_PACK_U8])      
+                        apx.OPCODE_PACK_U8])
       self.assertEqual(node_data.outPortPrograms[1], expected)
       expected = bytes([apx.OPCODE_PACK_PROG, apx.UINT32_LEN,0,0,0,
-                        apx.OPCODE_PACK_U32])      
-      self.assertEqual(node_data.outPortPrograms[2], expected)      
+                        apx.OPCODE_PACK_U32])
+      self.assertEqual(node_data.outPortPrograms[2], expected)
       expected = bytes([apx.OPCODE_PACK_PROG, (3*apx.UINT16_LEN+apx.UINT32_LEN),0,0,0,
                         apx.OPCODE_RECORD_ENTER,
                         apx.OPCODE_RECORD_SELECT])+"SensorData\0".encode('ascii')+bytes([
@@ -75,10 +75,10 @@ class TestNodeDataCompile(unittest.TestCase):
                         apx.OPCODE_RECORD_LEAVE,
                         apx.OPCODE_RECORD_SELECT])+"TimeStamp\0".encode('ascii')+bytes([
                         apx.OPCODE_PACK_U32,
-                        apx.OPCODE_RECORD_LEAVE                        
+                        apx.OPCODE_RECORD_LEAVE
                         ])
-      self.assertEqual(node_data.outPortPrograms[3], expected)      
-      
+      self.assertEqual(node_data.outPortPrograms[3], expected)
+
       expected = bytes([apx.OPCODE_UNPACK_PROG, apx.UINT8_LEN,0,0,0,
                         apx.OPCODE_UNPACK_U8])
       self.assertEqual(node_data.inPortPrograms[0], expected)
@@ -100,7 +100,7 @@ class TestNodeDataCompile(unittest.TestCase):
 
 
 class TestNodeDataRead(unittest.TestCase):
-   
+
    def test_read_port_RheostatLevelRqst(self):
       node = create_node_and_data()
       port_RheostatLevelRqst = node.find('RheostatLevelRqst')
@@ -153,7 +153,7 @@ class TestNodeDataRead(unittest.TestCase):
       self.assertEqual(node_data.read_require_port(port_RecordSignal), {'Name': "abcdefgh", 'Id':0x12345678, 'Data': [0,0,1]})
       input_file.write(data_offset, struct.pack("<HHH",18000,2,10))
       self.assertEqual(node_data.read_require_port(port_RecordSignal), {'Name': "abcdefgh", 'Id':0x12345678, 'Data': [18000,2,10]})
-      
+
    def test_byte_to_port_all(self):
       node = create_node_and_data()
       node_data = apx.NodeData(node)
@@ -179,11 +179,11 @@ class TestNodeDataRead(unittest.TestCase):
       self.assertEqual(result[0][2], RheostatLevelRqst_data_len)
       self.assertEqual(result[1][2], StrSignal_data_len)
       self.assertEqual(result[2][2], RecordSignal_data_len)
-      
+
    def test_byte_to_port_RheostatLevelRqst(self):
       node = create_node_and_data()
       node_data = apx.NodeData(node)
-      
+
       RheostatLevelRqst_data_offset = 0
       RheostatLevelRqst_data_len = 1
       result = list(node_data.byte_to_port(RheostatLevelRqst_data_offset, RheostatLevelRqst_data_len))
@@ -196,7 +196,7 @@ class TestNodeDataRead(unittest.TestCase):
    def test_byte_to_port_StrSignal(self):
       node = create_node_and_data()
       node_data = apx.NodeData(node)
-      
+
       StrSignal_data_offset = 1
       StrSignal_data_len = 8
       for offset in range(StrSignal_data_offset, StrSignal_data_offset+StrSignal_data_len):
@@ -210,7 +210,7 @@ class TestNodeDataRead(unittest.TestCase):
    def test_byte_to_port_RecordSignal(self):
       node = create_node_and_data()
       node_data = apx.NodeData(node)
-      
+
       RecordSignal_data_offset = 9
       RecordSignal_data_len = 18
       for offset in range(RecordSignal_data_offset, RecordSignal_data_offset+RecordSignal_data_len):
@@ -220,20 +220,20 @@ class TestNodeDataRead(unittest.TestCase):
          self.assertIs(port, node.find('RecordSignal'))
          self.assertEqual(offset, RecordSignal_data_offset)
          self.assertEqual(length, RecordSignal_data_len)
-      
+
    def test_byte_to_port_invalid_args(self):
       node = create_node_and_data()
       node_data = apx.NodeData(node)
       self.assertEqual(len(node_data.inPortByteMap), 27)
-      
+
       with self.assertRaises(ValueError) as context:
          result = list(node_data.byte_to_port(28,1))
       self.assertEqual(str(context.exception), "start_offset (28) is beyond length of file (27)")
-      
+
       with self.assertRaises(ValueError) as context:
          result = list(node_data.byte_to_port(25,5))
       self.assertEqual(str(context.exception), "end_offset (30) is beyond length of file (27)")
-            
+
       RecordSignal_data_offset = 9
       RecordSignal_data_len = 18
       result = list(node_data.byte_to_port(25,2))
@@ -243,14 +243,14 @@ class TestNodeDataRead(unittest.TestCase):
       self.assertEqual(length, RecordSignal_data_len)
 
    def test_callback(self):
-      
+
       call_history = []
-      
+
       @apx.NodeDataClient.register
       class Listener:
          def on_require_port_data(self, port, value):
             call_history.append((port, value))
-      
+
       listener_obj = Listener()
       node = create_node_and_data()
       node_data = apx.NodeData(node)
@@ -273,7 +273,7 @@ class TestNodeDataRead(unittest.TestCase):
       self.assertEqual(len(call_history), 2)
       self.assertEqual(call_history[-1][0], node.find('RheostatLevelRqst'))
       self.assertEqual(call_history[-1][1], 255)
-      
+
       #test write RecordSignal
       input_file.write(RecordSignal_data_offset, "Test".encode('utf-8'))
       self.assertEqual(len(call_history), 3)
@@ -285,7 +285,7 @@ class TestNodeDataRead(unittest.TestCase):
       self.assertEqual(call_history[-1][1], {'Name': "Abc", 'Id': 918, 'Data':[1000,2000,4000]})
 
 class TestNodeDataWrite(unittest.TestCase):
-   
+
    def test_write_VehicleSpeed(self):
       node = create_node_and_data()
       node_data = apx.NodeData(node)
@@ -295,9 +295,9 @@ class TestNodeDataWrite(unittest.TestCase):
       output_file = node_data.outPortDataFile
       #verify init value
       self.assertEqual(output_file.read(VehicleSpeed_offset, VehicleSpeed_length), bytes([0xFF, 0xFF]))
-      node_data.write_provide_port(VehicleSpeed_port, 0x1234)      
+      node_data.write_provide_port(VehicleSpeed_port, 0x1234)
       self.assertEqual(output_file.read(VehicleSpeed_offset, VehicleSpeed_length), bytes([0x34, 0x12]))
-      
+
    def test_write_MainBeam(self):
       node = create_node_and_data()
       node_data = apx.NodeData(node)
@@ -311,7 +311,7 @@ class TestNodeDataWrite(unittest.TestCase):
       self.assertEqual(output_file.read(MainBeam_offset, MainBeam_length), bytes([0]))
       node_data.write_provide_port(MainBeam_port, 3)
       self.assertEqual(output_file.read(MainBeam_offset, MainBeam_length), bytes([3]))
-      
+
    def test_write_TotalDistance(self):
       node = create_node_and_data()
       node_data = apx.NodeData(node)
@@ -338,7 +338,7 @@ class TestNodeDataWrite(unittest.TestCase):
       #write some values
       node_data.write_provide_port(ComplexRecordSignal_port, {"SensorData": dict(x = 1, y =2, z= 3), 'TimeStamp':0})
       self.assertEqual(output_file.read(ComplexRecordSignal_offset, ComplexRecordSignal_length), struct.pack("<HHHL", 1,  2,  3, 0))
-   
+
    def test_write_string(self):
       node = apx.Node('TestNode')
       port = node.append(apx.ProvidePort('StrSignal', 'a[6]', '=""'))
@@ -374,7 +374,7 @@ class TestNodeDataWrite(unittest.TestCase):
       self.assertEqual(output_file.read(signal_offset, signal_length), struct.pack('<b', 127))
       node_data.write_provide_port(port, 0)
       self.assertEqual(output_file.read(signal_offset, signal_length), struct.pack('<b', 0))
-      
+
    def test_write_s16(self):
       node = apx.Node('TestNode')
       port = node.append(apx.ProvidePort('S16Signal', 's', '=0'))
@@ -411,7 +411,7 @@ class TestNodeDataWrite(unittest.TestCase):
       node_data.write_provide_port(port, 2147483647)
       self.assertEqual(output_file.read(signal_offset, signal_length), struct.pack('<i',2147483647))
       node_data.write_provide_port(port, 0)
-      self.assertEqual(output_file.read(signal_offset, signal_length), struct.pack('<i', 0))         
-      
+      self.assertEqual(output_file.read(signal_offset, signal_length), struct.pack('<i', 0))
+
 if __name__ == '__main__':
     unittest.main()

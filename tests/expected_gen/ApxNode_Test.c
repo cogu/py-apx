@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "ApxNode_Test.h"
+#include "ApxNode_Test_Cbk.h"
 #include "pack.h"
 
 //////////////////////////////////////////////////////////////////////////////
@@ -12,10 +13,24 @@
 #define APX_DEFINITON_LEN 299u
 #define APX_IN_PORT_DATA_LEN 17u
 #define APX_OUT_PORT_DATA_LEN 14u
+
+#define APX_RX_LEN_RU8PORT 1u
+#define APX_RX_LEN_RU8ARPORT 3u
+#define APX_RX_LEN_SOUNDREQUEST 3u
+#define APX_RX_LEN_RS32PORT 4u
+#define APX_RX_LEN_RS16ARPORT 6u
+
+#define APX_RX_OFFSET_RS16ARPORT 0u
+#define APX_RX_OFFSET_RS32PORT 6u
+#define APX_RX_OFFSET_RU8ARPORT 10u
+#define APX_RX_OFFSET_RU8PORT 13u
+#define APX_RX_OFFSET_SOUNDREQUEST 14u
+
 //////////////////////////////////////////////////////////////////////////////
 // LOCAL FUNCTIONS
 //////////////////////////////////////////////////////////////////////////////
 static void outPortData_writeCmd(apx_offset_t offset, apx_size_t len );
+
 //////////////////////////////////////////////////////////////////////////////
 // LOCAL VARIABLES
 //////////////////////////////////////////////////////////////////////////////
@@ -172,17 +187,40 @@ Std_ReturnType ApxNode_Write_Test_PU32Port(uint32 val)
 
 void Test_inPortDataWritten(void *arg, apx_nodeData_t *nodeData, uint32_t offset, uint32_t len)
 {
+   union data_tag
+   {
+      uint8 RU8Port;
+   } data;
+   uint32_t endOffset = offset + len;
+
    (void)arg;
    (void)nodeData;
-   (void)offset;
-   (void)len;
+
+   if (offset < APX_RX_OFFSET_RU8PORT)
+   {
+      offset = APX_RX_OFFSET_RU8PORT;
+   }
+   while (offset < endOffset)
+   {
+      switch(offset)
+      {
+      case APX_RX_OFFSET_RU8PORT:
+         (void) ApxNode_Read_Test_RU8Port(&data.RU8Port);
+         RU8Port_cb_func(data.RU8Port);
+         offset += APX_RX_LEN_RU8PORT;
+         break;
+      //case APX_RX_OFFSET_SOUNDREQUEST:
+      default:
+         offset = endOffset;
+      }
+   }
 }
 //////////////////////////////////////////////////////////////////////////////
 // LOCAL FUNCTIONS
 //////////////////////////////////////////////////////////////////////////////
 static void outPortData_writeCmd(apx_offset_t offset, apx_size_t len )
 {
-   if ( (m_outPortDirtyFlags[offset] == 0) && (true == apx_nodeData_isOutPortDataOpen(&m_nodeData) ) )
+   if ( (m_outPortDirtyFlags[offset] == 0) && apx_nodeData_isOutPortDataOpen(&m_nodeData) )
    {
       m_outPortDirtyFlags[offset] = (uint8_t) 1u;
       apx_nodeData_unlockOutPortData(&m_nodeData);
