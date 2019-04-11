@@ -1,5 +1,5 @@
-#ifndef APXNODE_TEST_CBK_H
-#define APXNODE_TEST_CBK_H
+#ifndef APXNODE_TESTCALLBACKLAST_CBK_H
+#define APXNODE_TESTCALLBACKLAST_CBK_H
 
 //////////////////////////////////////////////////////////////////////////////
 // INCLUDES
@@ -9,8 +9,6 @@
 //////////////////////////////////////////////////////////////////////////////
 // FUNCTION PROTOTYPES
 //////////////////////////////////////////////////////////////////////////////
-void RS16ARPort_cb_func(sint16 *value);
 void RU8Port_cb_func(uint8 value);
-void SoundRequest_cb_func(SoundRequest_T *value);
 
-#endif //APXNODE_TEST_CBK_H
+#endif //APXNODE_TESTCALLBACKLAST_CBK_H
