@@ -12,21 +12,25 @@
 //////////////////////////////////////////////////////////////////////////////
 // CONSTANTS AND DATA TYPES
 //////////////////////////////////////////////////////////////////////////////
-#define APX_DEFINITON_LEN 299u
-#define APX_IN_PORT_DATA_LEN 17u
+#define APX_DEFINITON_LEN 341u
+#define APX_IN_PORT_DATA_LEN 19u
 #define APX_OUT_PORT_DATA_LEN 14u
 
+#define APX_RX_LEN_RU8FIRSTPORT 1u
 #define APX_RX_LEN_RU8PORT 1u
+#define APX_RX_LEN_RU8LASTPORT 1u
 #define APX_RX_LEN_RU8ARPORT 3u
 #define APX_RX_LEN_SOUNDREQUEST 3u
 #define APX_RX_LEN_RS32PORT 4u
 #define APX_RX_LEN_RS16ARPORT 6u
 
-#define APX_RX_OFFSET_RS16ARPORT 0u
-#define APX_RX_OFFSET_RS32PORT 6u
-#define APX_RX_OFFSET_RU8ARPORT 10u
-#define APX_RX_OFFSET_RU8PORT 13u
-#define APX_RX_OFFSET_SOUNDREQUEST 14u
+#define APX_RX_OFFSET_RU8FIRSTPORT 0u
+#define APX_RX_OFFSET_RS16ARPORT 1u
+#define APX_RX_OFFSET_RS32PORT 7u
+#define APX_RX_OFFSET_RU8PORT 11u
+#define APX_RX_OFFSET_RU8ARPORT 12u
+#define APX_RX_OFFSET_SOUNDREQUEST 15u
+#define APX_RX_OFFSET_RU8LASTPORT 18u
 
 //////////////////////////////////////////////////////////////////////////////
 // LOCAL FUNCTIONS
@@ -43,7 +47,7 @@ static const uint8_t m_outPortInitData[APX_OUT_PORT_DATA_LEN]= {
 static uint8 m_outPortdata[APX_OUT_PORT_DATA_LEN];
 static uint8_t m_outPortDirtyFlags[APX_OUT_PORT_DATA_LEN];
 static const uint8_t m_inPortInitData[APX_IN_PORT_DATA_LEN]= {
-   255, 127, 1, 0, 0, 0, 1, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255
+   12, 255, 127, 1, 0, 0, 0, 1, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 210
 };
 
 static uint8 m_inPortdata[APX_IN_PORT_DATA_LEN];
@@ -57,11 +61,13 @@ static const char *m_apxDefinitionData=
 "P\"PS8Port\"c:=0\n"
 "P\"PU16ARPort\"S[4]:={65535, 65535, 65535, 65535}\n"
 "P\"PU32Port\"L:=4294967295\n"
+"R\"RU8FirstPort\"C:=12\n"
 "R\"RS16ARPort\"s[3]:={32767, 1, 0}\n"
 "R\"RS32Port\"l:=1\n"
-"R\"RU8ARPort\"C[3]:={255, 255, 255}\n"
 "R\"RU8Port\"C:=255\n"
+"R\"RU8ARPort\"C[3]:={255, 255, 255}\n"
 "R\"SoundRequest\"T[0]:={65535,255}\n"
+"R\"RU8LastPort\"C:=210\n"
 "\n";
 
 //////////////////////////////////////////////////////////////////////////////
@@ -84,12 +90,18 @@ apx_nodeData_t * ApxNode_GetNodeData_Test(void)
    return &m_nodeData;
 }
 
+Std_ReturnType ApxNode_Read_Test_RU8FirstPort(uint8 *val)
+{
+   *val = (uint8) m_inPortdata[0];
+   return E_OK;
+}
+
 Std_ReturnType ApxNode_Read_Test_RS16ARPort(sint16 *val)
 {
    uint8 *p;
    uint8 i;
    apx_nodeData_lockInPortData(&m_nodeData);
-   p=&m_inPortdata[0];
+   p=&m_inPortdata[1];
    for(i=0;i<3;i++)
    {
       val[i] = (sint16) unpackLE(p,(uint8) sizeof(sint16));
@@ -102,8 +114,14 @@ Std_ReturnType ApxNode_Read_Test_RS16ARPort(sint16 *val)
 Std_ReturnType ApxNode_Read_Test_RS32Port(sint32 *val)
 {
    apx_nodeData_lockInPortData(&m_nodeData);
-   *val = (sint32) unpackLE(&m_inPortdata[6],(uint8) sizeof(sint32));
+   *val = (sint32) unpackLE(&m_inPortdata[7],(uint8) sizeof(sint32));
    apx_nodeData_unlockInPortData(&m_nodeData);
+   return E_OK;
+}
+
+Std_ReturnType ApxNode_Read_Test_RU8Port(uint8 *val)
+{
+   *val = (uint8) m_inPortdata[11];
    return E_OK;
 }
 
@@ -112,7 +130,7 @@ Std_ReturnType ApxNode_Read_Test_RU8ARPort(uint8 *val)
    uint8 *p;
    uint8 i;
    apx_nodeData_lockInPortData(&m_nodeData);
-   p=&m_inPortdata[10];
+   p=&m_inPortdata[12];
    for(i=0;i<3;i++)
    {
       val[i] = (uint8) *p;
@@ -122,22 +140,22 @@ Std_ReturnType ApxNode_Read_Test_RU8ARPort(uint8 *val)
    return E_OK;
 }
 
-Std_ReturnType ApxNode_Read_Test_RU8Port(uint8 *val)
-{
-   *val = (uint8) m_inPortdata[13];
-   return E_OK;
-}
-
 Std_ReturnType ApxNode_Read_Test_SoundRequest(SoundRequest_T *val)
 {
    uint8 *p;
    apx_nodeData_lockInPortData(&m_nodeData);
-   p=&m_inPortdata[14];
+   p=&m_inPortdata[15];
    val->SoundId = (uint16) unpackLE(p,(uint8) sizeof(uint16));
    p+=sizeof(uint16);
    val->Volume = (uint8) *p;
    p++;
    apx_nodeData_unlockInPortData(&m_nodeData);
+   return E_OK;
+}
+
+Std_ReturnType ApxNode_Read_Test_RU8LastPort(uint8 *val)
+{
+   *val = (uint8) m_inPortdata[18];
    return E_OK;
 }
 
@@ -191,27 +209,45 @@ void Test_inPortDataWritten(void *arg, apx_nodeData_t *nodeData, uint32_t offset
 {
    union data_tag
    {
+      sint16 RS16ARPort[3];
       uint8 RU8Port;
+      SoundRequest_T SoundRequest;
    } data;
    uint32_t endOffset = offset + len;
 
    (void)arg;
    (void)nodeData;
 
-   if (offset < APX_RX_OFFSET_RU8PORT)
+   if (offset < APX_RX_OFFSET_RS16ARPORT)
    {
-      offset = APX_RX_OFFSET_RU8PORT;
+      offset = APX_RX_OFFSET_RS16ARPORT;
    }
    while (offset < endOffset)
    {
       switch(offset)
       {
+      case APX_RX_OFFSET_RS16ARPORT:
+         (void) ApxNode_Read_Test_RS16ARPort(&data.RS16ARPort[0]);
+         RS16ARPort_cb_func(&data.RS16ARPort[0]);
+         offset += APX_RX_LEN_RS16ARPORT;
+         break;
+      case APX_RX_OFFSET_RS32PORT:
+         offset += APX_RX_LEN_RS32PORT;
+         break;
       case APX_RX_OFFSET_RU8PORT:
          (void) ApxNode_Read_Test_RU8Port(&data.RU8Port);
          RU8Port_cb_func(data.RU8Port);
          offset += APX_RX_LEN_RU8PORT;
          break;
-      //case APX_RX_OFFSET_SOUNDREQUEST:
+      case APX_RX_OFFSET_RU8ARPORT:
+         offset += APX_RX_LEN_RU8ARPORT;
+         break;
+      case APX_RX_OFFSET_SOUNDREQUEST:
+         (void) ApxNode_Read_Test_SoundRequest(&data.SoundRequest);
+         SoundRequest_cb_func(&data.SoundRequest);
+         offset += APX_RX_LEN_SOUNDREQUEST;
+         break;
+      //case APX_RX_OFFSET_RU8LASTPORT:
       default:
          offset = endOffset;
       }
