@@ -22,6 +22,13 @@ VTYPE_SCALAR = 0
 VTYPE_LIST = 1
 VTYPE_MAP = 2
 
+UINT8_LEN   = 1
+UINT16_LEN  = 2
+UINT32_LEN  = 4
+SINT8_LEN   = 1
+SINT16_LEN  = 2
+SINT32_LEN  = 4
+
 MAX_RECURSE_DEPTH = 10
 
 def match_pair(s,left,right):

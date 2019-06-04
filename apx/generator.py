@@ -129,7 +129,7 @@ class NodeGenerator:
         self.lastCallbackOffset = None
         self.record_elem_suffix = record_elem_suffix if record_elem_suffix is not None else ''
 
-    def generate(self, output_dir, node, name=None, includes=None, callbacks=None, header_dir=None):
+    def generate(self, output_dir, node, name=None, includes=None, callbacks=None, header_dir=None, direct_write = None):
         """
         generates APX node layer for single APX node
 
@@ -146,6 +146,7 @@ class NodeGenerator:
            callbacks: optional dict of require port callbacks (key: port name, value: name of C callback function)
 
            header_dir: optional directory where to redirect header generation (instead of output_dir)
+           direct_write: Optional list of port names. This will activate direct write mode on the given ports (apx-es only).
 
         """
         signalInfoList=[]
@@ -164,6 +165,11 @@ class NodeGenerator:
         self.includes=includes
         self.callback_list = []
         self.has_callbacks = True if (callbacks is not None) else False
+        self.direct_write_ports = set()
+
+        if direct_write is not None:
+            for port_name in direct_write:
+                self.direct_write_ports.add(str(port_name))
 
         if not node.isFinalized:
             node.finalize_sorted()
@@ -223,9 +229,9 @@ class NodeGenerator:
             with open(callback_path, "w") as fp:
                 self._writeCallbackPrototypes(fp, prefixed_name.upper()+'_CBK_H')
         with open(header_filename, "w") as fp:
-            (initFunc, nodeDataFunc) = self._writeHeaderFile(fp, signalInfoList, signalInfoMap, prefixed_name.upper()+'_H', node)
+            (initFunc, nodeDataFunc, nodeConnectedFunc) = self._writeHeaderFile(fp, signalInfoList, signalInfoMap, prefixed_name.upper()+'_H', node)
         with open(source_filename, "w") as fp:
-            self._writeSourceFile(fp, signalInfoMap, initFunc, nodeDataFunc, node, inPortDataLen, outPortDataLen, callback_file)
+            self._writeSourceFile(fp, signalInfoMap, initFunc, nodeDataFunc, nodeConnectedFunc, node, inPortDataLen, outPortDataLen, callback_file)
 
     def genPackUnpackInteger(self, code, buf, operation, valname, dataElement, localvar, offset, indent):
         dataLen=0
@@ -383,7 +389,9 @@ class NodeGenerator:
             code.append(C.statement('%s=&%s[%d]' % (localvar['bufptr'].name, buf.name, offset), indent=indent))
         code.extend(codeBlock)
         if operation=='pack':
-            code.append(C.statement(C.fcall('outPortData_writeCmd', params=[offset, packLen]), indent=indent))
+            node_data_arg = '&m_nodeData'
+            direct_write_arg = 'false'
+            code.append(C.statement(C.fcall('apx_nodeData_outPortDataWriteNotify', params=[node_data_arg, offset, packLen, direct_write_arg]), indent=indent))
         else:
             if packLen > 1:
                 code.append(C.statement('apx_nodeData_unlockInPortData(&m_nodeData)', indent=indent))
@@ -394,9 +402,8 @@ class NodeGenerator:
     def _writeHeaderFile(self, fp, signalInfoList, signalInfoMap, guard, node):
         headerFile = C.hfile(None, guard=guard)
         headerFile.code.append(C.blank(1))
+        headerFile.code.append(C.sysinclude('stdbool.h'))
         headerFile.code.append(C.include('apx_nodeData.h'))
-        # headerFile.code.append(C.include('Std_Types.h'))
-        # headerFile.code.append(C.include('Rte_Type.h'))
         if self.includes is not None:
             for filename in self.includes:
                 headerFile.code.append(C.include(filename))
@@ -406,10 +413,12 @@ class NodeGenerator:
 
         headerFile.code.append(C.blank(1))
         headerFile.code.extend(_genCommentHeader('FUNCTION PROTOTYPES'))
-        initFunc = C.function('ApxNode_Init_%s' % self.name, 'void')
+        initFunc = C.function('ApxNode_Init_%s' % self.name, 'apx_nodeData_t', pointer=True)
         nodeDataFunc = C.function('ApxNode_GetNodeData_%s' % self.name, 'apx_nodeData_t', pointer=True)
+        nodeConnectedFunc = C.function('ApxNode_IsConnected_%s' % self.name, 'bool')
         headerFile.code.append(C.statement(initFunc))
         headerFile.code.append(C.statement(nodeDataFunc))
+        headerFile.code.append(C.statement(nodeConnectedFunc))
         headerFile.code.append(C.blank(1))
         for elem in signalInfoList:
             headerFile.code.append(C.statement(elem.func))
@@ -424,9 +433,9 @@ class NodeGenerator:
             headerFile.code.append(C.statement(self.InPortDataNotifyFunc))
 
         fp.write(str(headerFile))
-        return (initFunc, nodeDataFunc)
+        return (initFunc, nodeDataFunc, nodeConnectedFunc)
 
-    def _writeSourceFile(self, fp, signalInfoMap, initFunc, nodeDataFunc, node, inPortDataLen, outPortDataLen, callbackHeader):
+    def _writeSourceFile(self, fp, signalInfoMap, initFunc, nodeDataFunc, nodeConnectedFunc, node, inPortDataLen, outPortDataLen, callbackHeader):
         indent=0
         indentStep=3
 
@@ -472,8 +481,8 @@ class NodeGenerator:
         code.append(C.line('//////////////////////////////////////////////////////////////////////////////'))
         code.append(C.line('// LOCAL FUNCTIONS'))
         code.append(C.line('//////////////////////////////////////////////////////////////////////////////'))
-        if outPortDataLen > 0:
-            code.append(C.statement('static void outPortData_writeCmd(apx_offset_t offset, apx_size_t len )'))
+#        if outPortDataLen > 0:
+#            code.append(C.statement('static void outPortData_writeCmd(apx_offset_t offset, apx_size_t len )'))
 
         code.append(C.blank(1))
         code.append(C.line('//////////////////////////////////////////////////////////////////////////////'))
@@ -569,19 +578,29 @@ class NodeGenerator:
         else:
             args.extend(['0', '0', '0'])
         body.append(C.statement('apx_nodeData_create(%s)' % (', '.join(args))))
-        body.append(C.line('#ifdef APX_POLLED_DATA_MODE', indent=0))
-        body.append(C.statement('rbfs_create(&m_outPortDataCmdQueue, &m_outPortDataCmdBuf[0], APX_NUM_OUT_PORTS, APX_DATA_WRITE_CMD_SIZE)'))
-        body.append(C.line('#endif', indent=0))
-
+        body.append(C.statement('return &m_nodeData'))
         sourceFile.code.append(body)
         sourceFile.code.append(C.blank(1))
 
         sourceFile.code.append(nodeDataFunc)
         body=C.block(innerIndent=indentStep)
-
         body.append(C.statement('return &m_nodeData'))
         sourceFile.code.append(body)
         sourceFile.code.append(C.blank(1))
+
+        sourceFile.code.append(nodeConnectedFunc)
+        body=C.block(innerIndent=indentStep)
+        if (inPortDataLen > 0) and (outPortDataLen > 0):
+            body.append(C.statement('return ( apx_nodeData_isInPortDataOpen(&m_nodeData) && apx_nodeData_isOutPortDataOpen(&m_nodeData) )'))
+        elif (inPortDataLen > 0):
+            body.append(C.statement('return apx_nodeData_isInPortDataOpen(&m_nodeData)'))
+        elif (outPortDataLen > 0):
+            body.append(C.statement('return apx_nodeData_isOutPortDataOpen(&m_nodeData)'))
+        else:
+            body.append(C.statement('return false'))
+        sourceFile.code.append(body)
+        sourceFile.code.append(C.blank(1))
+
 
         for port in node.requirePorts:
             signalInfo = signalInfoMap['require'][port.name]
@@ -656,18 +675,18 @@ class NodeGenerator:
         code.append(C.line('//////////////////////////////////////////////////////////////////////////////'))
         code.append(C.line('// LOCAL FUNCTIONS'))
         code.append(C.line('//////////////////////////////////////////////////////////////////////////////'))
-        if outPortDataLen>0:
-            code.append('''static void outPortData_writeCmd(apx_offset_t offset, apx_size_t len )
-{
-   if ( (m_outPortDirtyFlags[offset] == 0) && apx_nodeData_isOutPortDataOpen(&m_nodeData) )
-   {
-      m_outPortDirtyFlags[offset] = (uint8_t) 1u;
-      apx_nodeData_unlockOutPortData(&m_nodeData);
-      apx_nodeData_outPortDataNotify(&m_nodeData, (uint32_t) offset, (uint32_t) len);
-      return;
-   }
-   apx_nodeData_unlockOutPortData(&m_nodeData);
-}''')
+#         if outPortDataLen>0:
+#             code.append('''static void outPortData_writeCmd(apx_offset_t offset, apx_size_t len )
+# {
+#    if ( (m_outPortDirtyFlags[offset] == 0) && apx_nodeData_isOutPortDataOpen(&m_nodeData) )
+#    {
+#       m_outPortDirtyFlags[offset] = (uint8_t) 1u;
+#       apx_nodeData_unlockOutPortData(&m_nodeData);
+#       apx_nodeData_outPortDataNotify(&m_nodeData, (uint32_t) offset, (uint32_t) len);
+#       return;
+#    }
+#    apx_nodeData_unlockOutPortData(&m_nodeData);
+# }''')
         fp.write(str(sourceFile))
 
     def _writeCallbackPrototypes(self, fp, guard):
