@@ -562,6 +562,8 @@ class NodeGenerator:
 
         sourceFile.code.append(initFunc)
         body=C.block(innerIndent=indentStep)
+        if self.has_callbacks:
+            body.append(C.statement('apx_nodeDataHandlerTable_t nodeDataHandler'))
         if inPortDataLen>0:
             body.append(C.statement('memcpy(&m_inPortdata[0], &m_inPortInitData[0], APX_IN_PORT_DATA_LEN)'))
             body.append(C.statement('memset(&m_inPortDirtyFlags[0], 0, sizeof(m_inPortDirtyFlags))'))
@@ -578,6 +580,10 @@ class NodeGenerator:
         else:
             args.extend(['0', '0', '0'])
         body.append(C.statement('apx_nodeData_create(%s)' % (', '.join(args))))
+        if self.has_callbacks:
+            body.append(C.statement('memset(&nodeDataHandler, 0, sizeof(nodeDataHandler))'))
+            body.append(C.statement('nodeDataHandler.inPortDataWritten = {}_inPortDataWritten'.format(node.name)))
+            body.append(C.statement('apx_nodeData_setHandlerTable(&m_nodeData, &nodeDataHandler)'))
         body.append(C.statement('return &m_nodeData'))
         sourceFile.code.append(body)
         sourceFile.code.append(C.blank(1))
@@ -600,7 +606,6 @@ class NodeGenerator:
             body.append(C.statement('return false'))
         sourceFile.code.append(body)
         sourceFile.code.append(C.blank(1))
-
 
         for port in node.requirePorts:
             signalInfo = signalInfoMap['require'][port.name]
