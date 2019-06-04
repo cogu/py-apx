@@ -238,41 +238,41 @@ class NodeGenerator:
         resolvedElement = dataElement.resolve_data_element()
         if resolvedElement.typeCode==apx.SINT8_TYPE_CODE or resolvedElement.typeCode==apx.UINT8_TYPE_CODE:
             dataLen=1
-            basetype='sint8' if resolvedElement.typeCode==apx.SINT8_TYPE_CODE else 'uint8'
+            basetype='int8_t' if resolvedElement.typeCode==apx.SINT8_TYPE_CODE else 'uint8_t'
         elif resolvedElement.typeCode==apx.SINT16_TYPE_CODE or resolvedElement.typeCode==apx.UINT16_TYPE_CODE:
             dataLen=2
-            basetype='sint16' if resolvedElement.typeCode==apx.SINT16_TYPE_CODE else 'uint16'
+            basetype='int16_t' if resolvedElement.typeCode==apx.SINT16_TYPE_CODE else 'uint16_t'
         elif resolvedElement.typeCode==apx.SINT32_TYPE_CODE or resolvedElement.typeCode==apx.UINT32_TYPE_CODE:
             dataLen=4
-            basetype='sint32' if resolvedElement.typeCode==apx.SINT32_TYPE_CODE else 'uint32'
+            basetype='int32_t' if resolvedElement.typeCode==apx.SINT32_TYPE_CODE else 'uint32_t'
         else:
             raise NotImplementedError(resolvedElement.typeCode)
         if 'bufptr' in localvar:
             # relative addressing
             if dataLen == 1:
                 if operation == 'pack':
-                    code.append(C.statement('*%s=(uint8) %s' % (localvar['bufptr'].name, valname), indent=indent))
+                    code.append(C.statement('*%s=(uint8_t) %s' % (localvar['bufptr'].name, valname), indent=indent))
                 else:  # unpack
                     code.append(C.statement('%s = (%s) *%s' % (valname, basetype, localvar['bufptr'].name), indent=indent))
                 code.append(C.statement('%s++' % (localvar['bufptr'].name), indent=indent))
             else:
                 if operation == 'pack':
-                    code.append(C.statement('packLE(%s,(uint32) %s,(uint8) sizeof(%s))' % (localvar['bufptr'].name, valname, basetype), indent=indent))
+                    code.append(C.statement('packLE(%s,(uint32_t) %s,(uint8_t) sizeof(%s))' % (localvar['bufptr'].name, valname, basetype), indent=indent))
                 else:
-                    code.append(C.statement('%s = (%s) unpackLE(%s,(uint8) sizeof(%s))' % (valname, basetype, localvar['bufptr'].name, basetype), indent=indent))
+                    code.append(C.statement('%s = (%s) unpackLE(%s,(uint8_t) sizeof(%s))' % (valname, basetype, localvar['bufptr'].name, basetype), indent=indent))
                 code.append(C.statement('%s+=sizeof(%s)' % (localvar['bufptr'].name, basetype), indent=indent))
         else:
             # absolute addressing
             if dataLen == 1:
                 if operation == 'pack':
-                    code.append(C.statement("%s[%d]=(uint8) %s" % (buf.name, offset, valname), indent=indent))
+                    code.append(C.statement("%s[%d]=(uint8_t) %s" % (buf.name, offset, valname), indent=indent))
                 else:  # unpack
                     code.append(C.statement("*%s = (%s) %s[%d]" % (valname, basetype, buf.name, offset), indent=indent))
             else:
                 if operation == 'pack':
-                    code.append(C.statement('packLE(&%s[%d],(uint32) %s,(uint8) sizeof(%s))' % (buf.name, offset, valname, basetype), indent=indent))
+                    code.append(C.statement('packLE(&%s[%d],(uint32_t) %s,(uint8_t) sizeof(%s))' % (buf.name, offset, valname, basetype), indent=indent))
                 else:
-                    code.append(C.statement('*%s = (%s) unpackLE(&%s[%d],(uint8) sizeof(%s))' % (valname, basetype, buf.name, offset, basetype), indent=indent))
+                    code.append(C.statement('*%s = (%s) unpackLE(&%s[%d],(uint8_t) sizeof(%s))' % (valname, basetype, buf.name, offset, basetype), indent=indent))
         return dataLen
 
     def genPackUnpackItem(self, code, buf, operation, val, elem, localvar, offset, indent, indentStep):
@@ -323,7 +323,7 @@ class NodeGenerator:
 
             elif dataElement.typeCode==apx.RECORD_TYPE_CODE:
                 if 'bufptr' not in localvar:
-                    localvar['bufptr'] = C.variable('p', 'uint8', pointer=True)
+                    localvar['bufptr'] = C.variable('p', 'uint8_t', pointer=True)
                 for childElement in dataElement.elements:
                     if isinstance(val, C.variable):
                         if val.pointer:
@@ -338,20 +338,20 @@ class NodeGenerator:
                     packLen+=itemLen
             elif dataElement.isArray():
                 if dataElement.arrayLen<256:
-                    typename='uint8'
+                    typename='uint8_t'
                 elif dataElement.arrayLen<65536:
-                    typename='uint16'
+                    typename='uint16_t'
                 else:
-                    typename='uint32'
+                    typename='uint32_t'
                 if 'loopVar' not in localvar:
                     localvar['loopVar'] = C.variable('i', typename)
                 else:
-                    if localvar['loopVar'].typename=='uint8' and (typename=='uint16' or typename=='uint32'):
+                    if localvar['loopVar'].typename=='uint8_t' and (typename=='uint16_t' or typename=='uint32_t'):
                         localvar['loopVar'].typename=typename
-                    elif localvar['loopVar'].typename=='uint16' and typename=='uint32':
+                    elif localvar['loopVar'].typename=='uint16_t' and typename=='uint32_t':
                         localvar['loopVar'].typename=typename
                 if 'bufptr' not in localvar:
-                    localvar['bufptr'] = C.variable('p', 'uint8', pointer=True)
+                    localvar['bufptr'] = C.variable('p', 'uint8_t', pointer=True)
                 code.append(C.line('for({0}=0;{0}<{1};{0}++)'.format(localvar['loopVar'].name, dataElement.arrayLen), indent=indent))
                 block=C.block(indent=indent)
                 indent+=indentStep
@@ -490,7 +490,7 @@ class NodeGenerator:
         code.append(C.line('//////////////////////////////////////////////////////////////////////////////'))
 
         if outPortDataLen > 0:
-            outDatabuf = C.variable('m_outPortdata', 'uint8', static=True, array='APX_OUT_PORT_DATA_LEN')
+            outDatabuf = C.variable('m_outPortdata', 'uint8_t', static=True, array='APX_OUT_PORT_DATA_LEN')
             outInitData = C.variable('m_outPortInitData', 'uint8_t', static=True, const=True, array='APX_OUT_PORT_DATA_LEN')
             code.append(str(outInitData)+'= {')
             initBytes = []
@@ -520,7 +520,7 @@ class NodeGenerator:
             outDatabuf, outInitData = None, None
 
         if inPortDataLen > 0:
-            inDatabuf = C.variable('m_inPortdata', 'uint8', static=True, array='APX_IN_PORT_DATA_LEN')
+            inDatabuf = C.variable('m_inPortdata', 'uint8_t', static=True, array='APX_IN_PORT_DATA_LEN')
             inInitData = C.variable('m_inPortInitData', 'uint8_t', static=True, const=True, array='APX_IN_PORT_DATA_LEN')
             code.append(str(inInitData)+'= {')
             initBytes = []
