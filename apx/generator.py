@@ -363,7 +363,7 @@ class NodeGenerator:
             packLen=self.genPackUnpackInteger(code, buf, operation, valname, elem, localvar, offset, indent)
         return packLen
 
-    def genPackUnpackFunc(self, func, buf, offset, operation, dsg, indent, indentStep):
+    def genPackUnpackFunc(self, func, buf, offset, operation, dsg, direct_write, indent, indentStep):
         indent+=indentStep
         code=C.block()
         localvar = {'buf': 'm_outPortdata'}
@@ -390,7 +390,7 @@ class NodeGenerator:
         code.extend(codeBlock)
         if operation=='pack':
             node_data_arg = '&m_nodeData'
-            direct_write_arg = 'false'
+            direct_write_arg = 'true' if direct_write else 'false'
             code.append(C.statement(C.fcall('apx_nodeData_outPortDataWriteNotify', params=[node_data_arg, offset, packLen, direct_write_arg]), indent=indent))
         else:
             if packLen > 1:
@@ -608,15 +608,17 @@ class NodeGenerator:
         sourceFile.code.append(C.blank(1))
 
         for port in node.requirePorts:
+            direct_write = False
             signalInfo = signalInfoMap['require'][port.name]
             sourceFile.code.append(signalInfo.func)
-            body, packLen = self.genPackUnpackFunc(signalInfo.func, inDatabuf, signalInfo.offset, signalInfo.operation, signalInfo.dsg, indent, indentStep)
+            body, packLen = self.genPackUnpackFunc(signalInfo.func, inDatabuf, signalInfo.offset, signalInfo.operation, signalInfo.dsg, direct_write, indent, indentStep)
             code.append(body)
             code.append(C.blank())
         for port in node.providePorts:
+            direct_write = port.name in self.direct_write_ports
             signalInfo = signalInfoMap['provide'][port.name]
             sourceFile.code.append(signalInfo.func)
-            body, packLen = self.genPackUnpackFunc(signalInfo.func, outDatabuf, signalInfo.offset, signalInfo.operation, signalInfo.dsg, indent, indentStep)
+            body, packLen = self.genPackUnpackFunc(signalInfo.func, outDatabuf, signalInfo.offset, signalInfo.operation, signalInfo.dsg, direct_write, indent, indentStep)
             code.append(body)
             code.append(C.blank())
 
