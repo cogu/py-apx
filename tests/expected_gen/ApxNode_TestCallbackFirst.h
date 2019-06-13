@@ -1,6 +1,7 @@
 #ifndef APXNODE_TESTCALLBACKFIRST_H
 #define APXNODE_TESTCALLBACKFIRST_H
 
+#include <stdbool.h>
 #include "apx_nodeData.h"
 
 //////////////////////////////////////////////////////////////////////////////
@@ -10,8 +11,9 @@
 //////////////////////////////////////////////////////////////////////////////
 // FUNCTION PROTOTYPES
 //////////////////////////////////////////////////////////////////////////////
-void ApxNode_Init_TestCallbackFirst(void);
+apx_nodeData_t * ApxNode_Init_TestCallbackFirst(void);
 apx_nodeData_t * ApxNode_GetNodeData_TestCallbackFirst(void);
+bool ApxNode_IsConnected_TestCallbackFirst(void);
 
 Std_ReturnType ApxNode_Read_TestCallbackFirst_RS32Port(sint32 *val);
 Std_ReturnType ApxNode_Read_TestCallbackFirst_RU8Port(uint8 *val);

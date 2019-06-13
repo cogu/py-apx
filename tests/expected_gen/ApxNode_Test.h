@@ -1,6 +1,7 @@
 #ifndef APXNODE_TEST_H
 #define APXNODE_TEST_H
 
+#include <stdbool.h>
 #include "apx_nodeData.h"
 
 //////////////////////////////////////////////////////////////////////////////
@@ -10,8 +11,9 @@
 //////////////////////////////////////////////////////////////////////////////
 // FUNCTION PROTOTYPES
 //////////////////////////////////////////////////////////////////////////////
-void ApxNode_Init_Test(void);
+apx_nodeData_t * ApxNode_Init_Test(void);
 apx_nodeData_t * ApxNode_GetNodeData_Test(void);
+bool ApxNode_IsConnected_Test(void);
 
 Std_ReturnType ApxNode_Read_Test_RU8FirstPort(uint8 *val);
 Std_ReturnType ApxNode_Read_Test_RS16ARPort(sint16 *val);

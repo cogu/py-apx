@@ -1,6 +1,7 @@
 #ifndef APXNODE_TESTCALLBACKLAST_H
 #define APXNODE_TESTCALLBACKLAST_H
 
+#include <stdbool.h>
 #include "apx_nodeData.h"
 
 //////////////////////////////////////////////////////////////////////////////
@@ -10,8 +11,9 @@
 //////////////////////////////////////////////////////////////////////////////
 // FUNCTION PROTOTYPES
 //////////////////////////////////////////////////////////////////////////////
-void ApxNode_Init_TestCallbackLast(void);
+apx_nodeData_t * ApxNode_Init_TestCallbackLast(void);
 apx_nodeData_t * ApxNode_GetNodeData_TestCallbackLast(void);
+bool ApxNode_IsConnected_TestCallbackLast(void);
 
 Std_ReturnType ApxNode_Read_TestCallbackLast_RS32Port(sint32 *val);
 Std_ReturnType ApxNode_Read_TestCallbackLast_RU8Port(uint8 *val);
