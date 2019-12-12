@@ -125,29 +125,31 @@ class NodeGenerator:
         self.InPortDataNotifyFunc = None
         self.callbacks = CallbackInfo()
         self.has_callbacks = False
+        self.thread_safe_require_ports = True
         self.firstCallback = None
         self.lastCallbackOffset = None
         self.record_elem_suffix = record_elem_suffix if record_elem_suffix is not None else ''
 
-    def generate(self, output_dir, node, name=None, includes=None, callbacks=None, header_dir=None, direct_write = None):
+    def generate(self, output_dir, node, name=None, includes=None, callbacks=None, header_dir=None, direct_write = None, thread_safe_require_ports = True):
         """
         generates APX node layer for single APX node
 
         parameters:
+           output_dir: directory where to generate header and source files
 
            node: APX node object
 
-           output_dir: directory where to generate header and source files
-
-           name: Can be used to override the name of the APX node. Default is
+           name: Can be used to override the name of the APX node. Default uses node.name
 
            includes: optional list of additional include files,
 
            callbacks: optional dict of require port callbacks (key: port name, value: name of C callback function)
 
            header_dir: optional directory where to redirect header generation (instead of output_dir)
+
            direct_write: Optional list of port names. This will activate direct write mode on the given ports (apx-es only).
 
+           thread_safe_require_ports: Allows for optimiation if no reads can happen during filemanager run, and all callbacks are sefe to call from the filemanager run thread.
         """
         signalInfoList=[]
         signalInfoMap={'require': {}, 'provide': {}}
@@ -165,6 +167,7 @@ class NodeGenerator:
         self.includes=includes
         self.callback_list = []
         self.has_callbacks = True if (callbacks is not None) else False
+        self.thread_safe_require_ports = thread_safe_require_ports
         self.direct_write_ports = set()
 
         if direct_write is not None:
@@ -383,7 +386,7 @@ class NodeGenerator:
         if operation=='pack':
             code.append(C.statement('apx_nodeData_lockOutPortData(&m_nodeData)', indent=indent))
         else:
-            if packLen > 1:
+            if self.thread_safe_require_ports and packLen > 1:
                 code.append(C.statement('apx_nodeData_lockInPortData(&m_nodeData)', indent=indent))
         if 'bufptr' in localvar:
             code.append(C.statement('%s=&%s[%d]' % (localvar['bufptr'].name, buf.name, offset), indent=indent))
@@ -393,7 +396,7 @@ class NodeGenerator:
             direct_write_arg = 'true' if direct_write else 'false'
             code.append(C.statement(C.fcall('apx_nodeData_outPortDataWriteNotify', params=[node_data_arg, offset, packLen, direct_write_arg]), indent=indent))
         else:
-            if packLen > 1:
+            if self.thread_safe_require_ports and packLen > 1:
                 code.append(C.statement('apx_nodeData_unlockInPortData(&m_nodeData)', indent=indent))
         code.append(C.statement('return E_OK', indent=indent))
         indent-=indentStep

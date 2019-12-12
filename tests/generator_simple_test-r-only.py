@@ -16,7 +16,7 @@ class TestApxGenerator(unittest.TestCase):
         if not os.path.exists(output_dir_full):
             os.makedirs(output_dir_full)
         time.sleep(0.1)
-        apx.NodeGenerator().generate(output_dir_full, node)
+        apx.NodeGenerator().generate(output_dir_full, node, thread_safe_require_ports=False)
         with open (os.path.join(os.path.dirname(__file__), output_dir, 'ApxNode_{0.name}.h'.format(node)), "r") as fp:
             generated=fp.read()
         with open (os.path.join(os.path.dirname(__file__), 'expected_gen', 'ApxNode_{0.name}.h'.format(node)), "r") as fp:

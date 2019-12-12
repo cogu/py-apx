@@ -58,9 +58,7 @@ bool ApxNode_IsConnected_TestSimpleOnlyR(void)
 
 Std_ReturnType ApxNode_Read_TestSimpleOnlyR_RU16Port(uint16 *val)
 {
-   apx_nodeData_lockInPortData(&m_nodeData);
    *val = (uint16_t) unpackLE(&m_inPortdata[0],(uint8_t) sizeof(uint16_t));
-   apx_nodeData_unlockInPortData(&m_nodeData);
    return E_OK;
 }
 
