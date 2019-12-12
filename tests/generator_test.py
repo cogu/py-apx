@@ -25,6 +25,7 @@ class TestApxGenerator(unittest.TestCase):
         node = apx.Node("Test")
         node.append(apx.DataType('SoundRequest_T','{"SoundId"S"Volume"C}'))
         node.append(apx.DataType('LightRequest_T','{"LightId"S"Intensity"C}'))
+        node.append(apx.DataType('HapticRequest_T','{"HapticId"S"Intensity"C}'))
         node.append(apx.RequirePort('RU8FirstPort','C','=12'))
         node.append(apx.RequirePort('RS16ARPort','s[3]','={32767, 1, 0}'))
         node.append(apx.RequirePort('RS32Port','l','=1'))
@@ -32,8 +33,9 @@ class TestApxGenerator(unittest.TestCase):
         node.append(apx.RequirePort('RU8ARPort','C[3]','={255, 255, 255}'))
         node.append(apx.RequirePort('LightRequest','T["LightRequest_T"]', '={65535,255}'))
         node.append(apx.RequirePort('SoundRequest','T["SoundRequest_T"]', '={65535,255}'))
-        node.append(apx.RequirePort('SoundRequest2','T["SoundRequest_T"]', '={65535,255}'))
         node.append(apx.RequirePort('RU8LastPort','C','=210'))
+        node.append(apx.ProvidePort('SoundRequestAck','T["SoundRequest_T"]', '={65535,255}'))
+        node.append(apx.ProvidePort('HapticRequest','T["HapticRequest_T"]', '={65535,255}'))
         node.append(apx.ProvidePort('PS8ARPort','c[1]','={1}'))
         node.append(apx.ProvidePort('PS8Port','c','=0'))
         node.append(apx.ProvidePort('PU16ARPort','S[4]','={65535, 65535, 65535, 65535}'))
@@ -49,7 +51,7 @@ class TestApxGenerator(unittest.TestCase):
             os.makedirs(output_dir_full)
         time.sleep(0.1)
         # If we want ports in the order appended; explicitly finalize the node before generator
-        node.finalize(sort=False)
+        node.finalize(sort=False, compact=True)
         apx.NodeGenerator().generate(output_dir_full, node, callbacks=callback_map)
         with open (os.path.join(os.path.dirname(__file__), output_dir, 'ApxNode_{0.name}.h'.format(node)), "r") as fp:
             generated=fp.read()

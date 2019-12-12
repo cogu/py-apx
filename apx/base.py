@@ -199,15 +199,17 @@ class DataType:
       self.dsg = DataSignature(dataSignature, None, self)
       self.attr = TypeAttribute(attributes) if attributes is not None else None
       self.id = None
+      self.short_name = None
 
    def __str__(self):
       return self.to_string()
 
    def to_string(self, normalized=False):
+      name = self.short_name if self.short_name is not None else self.name
       if self.attr is not None:
-         return 'T"%s"%s:%s'%(self.name, self.dsg.to_string(normalized), str(self.attr))
+         return 'T"%s"%s:%s'%(name, self.dsg.to_string(normalized), str(self.attr))
       else:
-         return 'T"%s"%s'%(self.name, self.dsg.to_string(normalized))
+         return 'T"%s"%s'%(name, self.dsg.to_string(normalized))
 
    def clone(self):
       if self.attr is not None:

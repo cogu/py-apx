@@ -346,6 +346,15 @@ class Node:
             if elem.name == name:
                 return elem
 
+    def compact_types(self):
+        """
+        give short sequential names to datatypes
+        """
+        idx = 0
+        for type in self.dataTypes:
+            type.short_name = 'T' + str(idx)
+            idx += 1
+
     def resolve_types(self):
         """
         Resolves all integer and string type references with their actual object counter-parts
@@ -354,10 +363,12 @@ class Node:
             if port.dsg.dataElement.isReference:
                 port.resolve_type(self.dataTypes)
 
-    def finalize(self, sort=False):
+    def finalize(self, sort=False, compact=False):
         if not self.isFinalized:
-            self.resolve_types()
             self._sort_elements(sort)
+            self.resolve_types()
+            if compact:
+                self.compact_types()
             self._set_type_ids()
             self.isFinalized = True
             return self
