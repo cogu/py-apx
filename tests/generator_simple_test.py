@@ -11,6 +11,8 @@ class TestApxGenerator(unittest.TestCase):
         node = apx.Node("TestSimple")
         node.append(apx.RequirePort('RS32Port','l','=-2147483648'))
         node.append(apx.RequirePort('RU8Port','C','=255'))
+        node.append(apx.RequirePort('PS16ARPort256','s[256]'))
+        node.append(apx.ProvidePort('PS16ARPort256','s[256]'))
         node.append(apx.ProvidePort('PS8Port','c','=-1'))
         node.append(apx.ProvidePort('PU32Port','L','=4294967295'))
 
