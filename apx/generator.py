@@ -129,24 +129,26 @@ class NodeGenerator:
         self.lastCallbackOffset = None
         self.record_elem_suffix = record_elem_suffix if record_elem_suffix is not None else ''
 
-    def generate(self, output_dir, node, name=None, includes=None, callbacks=None, header_dir=None, direct_write = None):
+    def generate(self, output_dir, node, name=None, includes=None, callbacks=None, header_dir=None, direct_write=None, with_inport_synced_status_flags=True):
         """
         generates APX node layer for single APX node
 
         parameters:
+           output_dir: directory where to generate header and source files
 
            node: APX node object
 
-           output_dir: directory where to generate header and source files
-
-           name: Can be used to override the name of the APX node. Default is
+           name: Can be used to override the name of the APX node. Default uses node.name
 
            includes: optional list of additional include files,
 
            callbacks: optional dict of require port callbacks (key: port name, value: name of C callback function)
 
            header_dir: optional directory where to redirect header generation (instead of output_dir)
+
            direct_write: Optional list of port names. This will activate direct write mode on the given ports (apx-es only).
+
+           with_inport_synced_status_flags: Optional bool if inport flags are desired
 
         """
         signalInfoList=[]
@@ -166,6 +168,7 @@ class NodeGenerator:
         self.callback_list = []
         self.has_callbacks = True if (callbacks is not None) else False
         self.direct_write_ports = set()
+        self.with_inport_synced_status_flags = with_inport_synced_status_flags
 
         if direct_write is not None:
             for port_name in direct_write:
@@ -544,7 +547,8 @@ class NodeGenerator:
             code.append('};')
             code.append(C.blank(1))
             code.append(C.statement(inDatabuf))
-            code.append(C.statement(C.variable('m_inPortDirtyFlags', 'uint8_t', static=True, array='APX_IN_PORT_DATA_LEN')))
+            if self.with_inport_synced_status_flags:
+                code.append(C.statement(C.variable('m_inPortSyncedFlags', 'uint8_t', static=True, array='APX_IN_PORT_DATA_LEN')))
         else:
             inDatabuf, inInitData = None, None
 
@@ -566,13 +570,19 @@ class NodeGenerator:
             body.append(C.statement('apx_nodeDataHandlerTable_t nodeDataHandler'))
         if inPortDataLen>0:
             body.append(C.statement('memcpy(&m_inPortdata[0], &m_inPortInitData[0], APX_IN_PORT_DATA_LEN)'))
-            body.append(C.statement('memset(&m_inPortDirtyFlags[0], 0, sizeof(m_inPortDirtyFlags))'))
+            if self.with_inport_synced_status_flags:
+                body.append(C.statement('memset(&m_inPortSyncedFlags[0], 0, sizeof(m_inPortSyncedFlags))'))
         if outPortDataLen>0:
             body.append(C.statement('memcpy(&m_outPortdata[0], &m_outPortInitData[0], APX_OUT_PORT_DATA_LEN)'))
             body.append(C.statement('memset(&m_outPortDirtyFlags[0], 0, sizeof(m_outPortDirtyFlags))'))
         args = ['&m_nodeData', '"%s"' % node.name, '(uint8_t*) &m_apxDefinitionData[0]', 'APX_DEFINITON_LEN']
         if inPortDataLen>0:
-            args.extend(['&m_inPortdata[0]', '&m_inPortDirtyFlags[0]', 'APX_IN_PORT_DATA_LEN'])
+            args.extend(['&m_inPortdata[0]'])
+            if self.with_inport_synced_status_flags:
+                args.extend(['&m_inPortSyncedFlags[0]'])
+            else:
+                args.extend(['NULL'])
+            args.extend(['APX_IN_PORT_DATA_LEN'])
         else:
             args.extend(['0', '0', '0'])
         if outPortDataLen>0:

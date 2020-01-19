@@ -27,7 +27,6 @@ static const uint8_t m_inPortInitData[APX_IN_PORT_DATA_LEN]= {
 };
 
 static uint8_t m_inPortdata[APX_IN_PORT_DATA_LEN];
-static uint8_t m_inPortDirtyFlags[APX_IN_PORT_DATA_LEN];
 static apx_nodeData_t m_nodeData;
 static const char *m_apxDefinitionData=
 "APX/1.2\n"
@@ -41,8 +40,7 @@ static const char *m_apxDefinitionData=
 apx_nodeData_t * ApxNode_Init_TestSimpleOnlyR(void)
 {
    memcpy(&m_inPortdata[0], &m_inPortInitData[0], APX_IN_PORT_DATA_LEN);
-   memset(&m_inPortDirtyFlags[0], 0, sizeof(m_inPortDirtyFlags));
-   apx_nodeData_create(&m_nodeData, "TestSimpleOnlyR", (uint8_t*) &m_apxDefinitionData[0], APX_DEFINITON_LEN, &m_inPortdata[0], &m_inPortDirtyFlags[0], APX_IN_PORT_DATA_LEN, 0, 0, 0);
+   apx_nodeData_create(&m_nodeData, "TestSimpleOnlyR", (uint8_t*) &m_apxDefinitionData[0], APX_DEFINITON_LEN, &m_inPortdata[0], NULL, APX_IN_PORT_DATA_LEN, 0, 0, 0);
    return &m_nodeData;
 }
 

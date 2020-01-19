@@ -52,7 +52,7 @@ static const uint8_t m_inPortInitData[APX_IN_PORT_DATA_LEN]= {
 };
 
 static uint8_t m_inPortdata[APX_IN_PORT_DATA_LEN];
-static uint8_t m_inPortDirtyFlags[APX_IN_PORT_DATA_LEN];
+static uint8_t m_inPortSyncedFlags[APX_IN_PORT_DATA_LEN];
 static apx_nodeData_t m_nodeData;
 static const char *m_apxDefinitionData=
 "APX/1.2\n"
@@ -83,10 +83,10 @@ apx_nodeData_t * ApxNode_Init_Test(void)
 {
    apx_nodeDataHandlerTable_t nodeDataHandler;
    memcpy(&m_inPortdata[0], &m_inPortInitData[0], APX_IN_PORT_DATA_LEN);
-   memset(&m_inPortDirtyFlags[0], 0, sizeof(m_inPortDirtyFlags));
+   memset(&m_inPortSyncedFlags[0], 0, sizeof(m_inPortSyncedFlags));
    memcpy(&m_outPortdata[0], &m_outPortInitData[0], APX_OUT_PORT_DATA_LEN);
    memset(&m_outPortDirtyFlags[0], 0, sizeof(m_outPortDirtyFlags));
-   apx_nodeData_create(&m_nodeData, "Test", (uint8_t*) &m_apxDefinitionData[0], APX_DEFINITON_LEN, &m_inPortdata[0], &m_inPortDirtyFlags[0], APX_IN_PORT_DATA_LEN, &m_outPortdata[0], &m_outPortDirtyFlags[0], APX_OUT_PORT_DATA_LEN);
+   apx_nodeData_create(&m_nodeData, "Test", (uint8_t*) &m_apxDefinitionData[0], APX_DEFINITON_LEN, &m_inPortdata[0], &m_inPortSyncedFlags[0], APX_IN_PORT_DATA_LEN, &m_outPortdata[0], &m_outPortDirtyFlags[0], APX_OUT_PORT_DATA_LEN);
    memset(&nodeDataHandler, 0, sizeof(nodeDataHandler));
    nodeDataHandler.inPortDataWritten = Test_inPortDataWritten;
    apx_nodeData_setHandlerTable(&m_nodeData, &nodeDataHandler);
