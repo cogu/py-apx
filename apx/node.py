@@ -270,6 +270,17 @@ class Node:
         mirror.resolve_types()
         return mirror
 
+    def compact(self, name=None):
+        """
+        clones the node in a version where all type definitions are removed
+        """
+        if name is None:
+            name = self.name
+        compact = Node(name)
+        compact.requirePorts = [apx.RequirePort(port.name, port.dsg.resolve_data_element().to_string(normalized=True), str(port.attr) if port.attr is not None else None) for port in self.requirePorts]
+        compact.providePorts = [apx.ProvidePort(port.name, port.dsg.resolve_data_element().to_string(normalized=True), str(port.attr) if port.attr is not None else None) for port in self.providePorts]
+        return compact
+
     def add_port_from_node(self, from_node, from_port, ignore_duplicates=False):
         """
         Attempts to clone the port from the other node, including all its data types
