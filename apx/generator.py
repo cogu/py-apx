@@ -129,7 +129,7 @@ class NodeGenerator:
         self.lastCallbackOffset = None
         self.record_elem_suffix = record_elem_suffix if record_elem_suffix is not None else ''
 
-    def generate(self, output_dir, node, name=None, includes=None, callbacks=None, header_dir=None, direct_write=None, with_inport_synced_status_flags=True):
+    def generate(self, output_dir, node, name=None, includes=None, callbacks=None, header_dir=None, direct_write=None, with_inport_synced_status_flags=True, compact=False):
         """
         generates APX node layer for single APX node
 
@@ -149,6 +149,8 @@ class NodeGenerator:
            direct_write: Optional list of port names. This will activate direct write mode on the given ports (apx-es only).
 
            with_inport_synced_status_flags: Optional bool if inport flags are desired
+
+           compact: Can be used to make apxDefinitionData more compact by removing typedefs
 
         """
         signalInfoList=[]
@@ -234,7 +236,7 @@ class NodeGenerator:
         with open(header_filename, "w") as fp:
             (initFunc, nodeDataFunc, nodeConnectedFunc) = self._writeHeaderFile(fp, signalInfoList, signalInfoMap, prefixed_name.upper()+'_H', node)
         with open(source_filename, "w") as fp:
-            self._writeSourceFile(fp, signalInfoMap, initFunc, nodeDataFunc, nodeConnectedFunc, node, inPortDataLen, outPortDataLen, callback_file)
+            self._writeSourceFile(fp, signalInfoMap, initFunc, nodeDataFunc, nodeConnectedFunc, node, inPortDataLen, outPortDataLen, callback_file, compact)
 
     def genPackUnpackInteger(self, code, buf, operation, valname, dataElement, localvar, offset, indent):
         dataLen=0
@@ -438,12 +440,15 @@ class NodeGenerator:
         fp.write(str(headerFile))
         return (initFunc, nodeDataFunc, nodeConnectedFunc)
 
-    def _writeSourceFile(self, fp, signalInfoMap, initFunc, nodeDataFunc, nodeConnectedFunc, node, inPortDataLen, outPortDataLen, callbackHeader):
+    def _writeSourceFile(self, fp, signalInfoMap, initFunc, nodeDataFunc, nodeConnectedFunc, node, inPortDataLen, outPortDataLen, callbackHeader, compact):
         indent=0
         indentStep=3
 
         ctx = apx.Context()
-        ctx.append(node)
+        if compact:
+            ctx.append(node.compact())
+        else:
+            ctx.append(node)
         nodeText = ctx.dumps()
         sourceFile=C.cfile(None)
         code = sourceFile.code

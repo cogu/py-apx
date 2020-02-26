@@ -68,6 +68,24 @@ class TestApxGenerator(unittest.TestCase):
         with open (os.path.join(os.path.dirname(__file__), 'expected_gen', 'ApxNode_{0.name}_Cbk.h'.format(node)), "r") as fp:
             expected=fp.read()
         self.assertEqual(expected, generated)
+
+        node.name = "Test_compact"
+        apx.NodeGenerator().generate(output_dir_full, node, callbacks=callback_map, compact=True)
+        with open (os.path.join(os.path.dirname(__file__), output_dir, 'ApxNode_{0.name}.h'.format(node)), "r") as fp:
+            generated=fp.read()
+        with open (os.path.join(os.path.dirname(__file__), 'expected_gen', 'ApxNode_{0.name}.h'.format(node)), "r") as fp:
+            expected=fp.read()
+        self.assertEqual(expected, generated)
+        with open (os.path.join(os.path.dirname(__file__), output_dir, 'ApxNode_{0.name}.c'.format(node)), "r") as fp:
+            generated=fp.read()
+        with open (os.path.join(os.path.dirname(__file__), 'expected_gen', 'ApxNode_{0.name}.c'.format(node)), "r") as fp:
+            expected=fp.read()
+        self.assertEqual(expected, generated)
+        with open (os.path.join(os.path.dirname(__file__), output_dir, 'ApxNode_{0.name}_Cbk.h'.format(node)), "r") as fp:
+            generated=fp.read()
+        with open (os.path.join(os.path.dirname(__file__), 'expected_gen', 'ApxNode_{0.name}_Cbk.h'.format(node)), "r") as fp:
+            expected=fp.read()
+        self.assertEqual(expected, generated)
         shutil.rmtree(output_dir_full)
 
 if __name__ == '__main__':

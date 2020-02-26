@@ -273,5 +273,18 @@ P"SoundRequest"T[2]:={65535,255,255}
 """
       self.assertEqual(expected, result)
 
+   def test_compact_node(self):
+      ws = _create_autosar_workspace()
+      context = _create_apx_context_from_autosar_workspace(ws)
+      compact_node = context.nodes[0].compact()
+      lines = compact_node.lines()
+      
+      self.assertEqual(len(lines), 5)
+      self.assertEqual(lines[0], 'N"TestSWC"')
+      self.assertEqual(lines[1], 'P"EngineRunningStatus"C(0,3):=3')
+      self.assertEqual(lines[2], 'P"VehicleSpeed"S:=0xFFFF')
+      self.assertEqual(lines[3], 'R"FuelLevelPercent"C:=255')
+      self.assertEqual(lines[4], 'R"EngineSpeed"S:=0')
+
 if __name__ == '__main__':
     unittest.main()
