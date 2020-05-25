@@ -43,7 +43,7 @@ class NodeData():
       self.outPortValues = [] #length: number of provide ports
       self.inPortDataFile = self._createInPortDataFile(self.node, compiler) if len(self.node.requirePorts)>0 else None
       self.outPortDataFile = self._createOutPortDataFile(self.node, compiler) if len(self.node.providePorts)>0 else None
-      self.definitionFile = self._createDefinitionFile(node.name,apx_text)      
+      self.definitionFile = self._createDefinitionFile(node.name,apx_text)
       self.vm = apx.VM()
       self.lock=threading.Lock() #the virtual machine is not thread-safe, use this lock to protect it in case users try to read/write ports from multiple threads
       if self.inPortDataFile is not None:
@@ -94,8 +94,9 @@ class NodeData():
 
 
    def _createDefinitionFile(self, node_name, apx_text):
-      file = apx.OutputFile(node_name+'.apx', len(apx_text))
-      file.write(0,bytes(apx_text, encoding='ascii'))
+      apx_text_size = len(apx_text.encode('utf-8'))
+      file = apx.OutputFile(node_name+'.apx', length=apx_text_size)
+      file.write(0,bytes(apx_text, encoding='utf-8'))
       return file
 
    def inPortDataWriteNotify(self, file, write_offset: int, write_len : int):
@@ -143,7 +144,7 @@ class NodeData():
          raise ValueError('port_id must be integer')
       port_map = self.outPortDataMap[port_id]
       assert(port_id == port_map.port.id)
-      return self.outPortValues[port_id]      
+      return self.outPortValues[port_id]
 
    def _packProvidePort(self, port_id, data_offset, data_len, value):
       program = self.outPortPrograms[port_id]
@@ -151,7 +152,7 @@ class NodeData():
       self.lock.acquire()
       self.vm.exec_pack_prog(program, data, 0, value)
       self.outPortValues[port_id]=value
-      self.lock.release()      
+      self.lock.release()
       self.outPortDataFile.write(data_offset, data)
 
    def read_require_port(self, port_id):
@@ -196,7 +197,7 @@ class NodeData():
       if len(self.inPortPrograms) != port.id:
          raise RuntimeError('port id {:d} of port {} is out of sync'.format(port.id, port.name))
       self.inPortPrograms.append(program)
-   
+
    def createOutPortValue(self, port):
       #TODO: add implementation for record types
       if port.attr is not None and port.attr.initValue is not None:
