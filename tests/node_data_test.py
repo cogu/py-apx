@@ -413,5 +413,17 @@ class TestNodeDataWrite(unittest.TestCase):
       node_data.write_provide_port(port, 0)
       self.assertEqual(output_file.read(signal_offset, signal_length), struct.pack('<i', 0))
 
+class TestNodeDataCreate(unittest.TestCase):
+
+   def test_create_port_with_unicode_initializer(self):
+      apx_definition = """APX/1.2
+N"TestNode"
+R"EquipmentValue"a[20]:="°"
+"""
+      node = apx.Node.from_text(apx_definition)
+      node_data = apx.NodeData(node)
+      self.assertEqual(node_data.inPortDataFile.data.decode(encoding='utf-8'), '°\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
+      self.assertEqual(node_data.definitionFile.data.decode('utf-8'), apx_definition)
+
 if __name__ == '__main__':
     unittest.main()

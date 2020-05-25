@@ -646,12 +646,19 @@ class DataElement:
             if not initValue.isString:
                raise ValueError('invalid init value type: expected string')
             if len(initValue.value) > dataElement.arrayLen:
+               truncate = True
                print('Warning: init value "%s" will be truncated to %d bytes'%(initValue.value, dataElement.arrayLen), file=sys.stderr)
-            for i in range(dataElement.arrayLen):
-               if i<len(initValue.value):
-                  data.append(ord(initValue.value[i]))
-               else:
-                  data.append(0)
+            else:
+               truncate = False
+            data.extend(initValue.value.encode('utf-8'))
+            if truncate:
+               data = data[0:dataElement.arrayLen]
+            else:
+               remain = dataElement.arrayLen - len(data)
+               assert(remain >= 0)
+               if (remain > 0):
+                  data.extend([0]*remain)
+               assert(len(data) == dataElement.arrayLen)
       elif (dataElement.typeCode in [UINT8_TYPE_CODE, UINT16_TYPE_CODE, UINT32_TYPE_CODE, SINT8_TYPE_CODE, SINT16_TYPE_CODE, SINT32_TYPE_CODE]):
          if (dataElement.isArray()) and (not is_array_elem):
             if (initValue.valueType != VTYPE_LIST):
