@@ -1,0 +1,3 @@
+[TYPECHECK]
+disable=E1101,W0311,C0326,C0413,C0103,C0410,missing-docstring
+max-line-length=130
