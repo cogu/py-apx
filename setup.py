@@ -12,7 +12,7 @@ def test_suite():
     return suite
 
 setup(name='apx',
-      version='0.4.1',
+      version='0.4.2',
       description='Official APX python toolchain and client',
       long_description=readme(),
       classifiers=[
