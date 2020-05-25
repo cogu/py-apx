@@ -1,12 +1,14 @@
 import os, sys, io
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-import apx
 import unittest
+import apx
+
 
 class TestDataSignatureParsing(unittest.TestCase):
 
     def test_uint8(self):
         (dataElement, remain) = apx.DataSignature.parseDataSignature('C')
+        self.assertEqual(len(remain), 0)
         self.assertIsInstance(dataElement, apx.DataElement)
         self.assertEqual(dataElement.typeCode, apx.UINT8_TYPE_CODE)
         self.assertIsNone(dataElement.minVal)
@@ -30,13 +32,13 @@ class TestDataSignatureParsing(unittest.TestCase):
 
     def test_uint8_array(self):
         (dataElement, remain) = apx.DataSignature.parseDataSignature('C[8]')
+        self.assertEqual(len(remain), 0)
         self.assertIsInstance(dataElement, apx.DataElement)
         self.assertEqual(dataElement.typeCode, apx.UINT8_TYPE_CODE)
         self.assertIsNone(dataElement.minVal)
         self.assertIsNone(dataElement.maxVal)
         self.assertTrue(dataElement.isArray())
         self.assertEqual(dataElement.arrayLen, 8)
-
 
         (dataElement, remain) = apx.DataSignature.parseDataSignature('C(0,1)[4]')
         self.assertIsInstance(dataElement, apx.DataElement)
@@ -56,16 +58,17 @@ class TestDataSignatureParsing(unittest.TestCase):
 
     def test_uint8_errors(self):
         with self.assertRaises(apx.ParseError):
-            (dataElement, remain) = apx.DataSignature.parseDataSignature('C[8')
+            apx.DataSignature.parseDataSignature('C[8')
 
         with self.assertRaises(apx.ParseError):
-            (dataElement, remain) = apx.DataSignature.parseDataSignature('C(0,1')
+            apx.DataSignature.parseDataSignature('C(0,1')
 
         with self.assertRaises(apx.ParseError):
-            (dataElement, remain) = apx.DataSignature.parseDataSignature('C(0,1)[8')
+            apx.DataSignature.parseDataSignature('C(0,1)[8')
 
     def test_uint16(self):
         (dataElement, remain) = apx.DataSignature.parseDataSignature('S')
+        self.assertEqual(len(remain), 0)
         self.assertIsInstance(dataElement, apx.DataElement)
         self.assertEqual(dataElement.typeCode, apx.UINT16_TYPE_CODE)
         self.assertIsNone(dataElement.minVal)
@@ -88,6 +91,7 @@ class TestDataSignatureParsing(unittest.TestCase):
 
     def test_uint16_array(self):
         (dataElement, remain) = apx.DataSignature.parseDataSignature('S[8]')
+        self.assertEqual(len(remain), 0)
         self.assertIsInstance(dataElement, apx.DataElement)
         self.assertEqual(dataElement.typeCode, apx.UINT16_TYPE_CODE)
         self.assertIsNone(dataElement.minVal)
@@ -114,6 +118,7 @@ class TestDataSignatureParsing(unittest.TestCase):
 
     def test_uint32(self):
         (dataElement, remain) = apx.DataSignature.parseDataSignature('L')
+        self.assertEqual(len(remain), 0)
         self.assertIsInstance(dataElement, apx.DataElement)
         self.assertEqual(dataElement.typeCode, apx.UINT32_TYPE_CODE)
         self.assertIsNone(dataElement.minVal)
@@ -136,6 +141,7 @@ class TestDataSignatureParsing(unittest.TestCase):
 
     def test_uint32_array(self):
         (dataElement, remain) = apx.DataSignature.parseDataSignature('L[8]')
+        self.assertEqual(len(remain), 0)
         self.assertIsInstance(dataElement, apx.DataElement)
         self.assertEqual(dataElement.typeCode, apx.UINT32_TYPE_CODE)
         self.assertIsNone(dataElement.minVal)
@@ -153,6 +159,7 @@ class TestDataSignatureParsing(unittest.TestCase):
         self.assertEqual(dataElement.arrayLen, 4)
 
         (dataElement, remain) = apx.DataSignature.parseDataSignature('L(0,4294967295)[10]')
+        self.assertEqual(len(remain), 0)
         self.assertIsInstance(dataElement, apx.DataElement)
         self.assertEqual(dataElement.typeCode, apx.UINT32_TYPE_CODE)
         self.assertEqual(dataElement.minVal, 0)
@@ -162,6 +169,7 @@ class TestDataSignatureParsing(unittest.TestCase):
 
     def test_record_simple(self):
         (dataElement, remain) = apx.DataSignature.parseDataSignature('{"Hours"C"Minutes"C"Seconds"C}')
+        self.assertEqual(len(remain), 0)
         self.assertIsInstance(dataElement, apx.DataElement)
         self.assertEqual(dataElement.typeCode, apx.RECORD_TYPE_CODE)
         self.assertEqual(len(dataElement.elements), 3)
@@ -194,6 +202,7 @@ class TestDataSignatureParsing(unittest.TestCase):
     def test_typeRef(self):
         type_list = [apx.DataType('TestType_T', 'S(0,10000)')]
         (dataElement, remain) = apx.DataSignature.parseDataSignature('T[0]', type_list)
+        self.assertEqual(len(remain), 0)
         self.assertIsInstance(dataElement, apx.DataElement)
         self.assertEqual(dataElement.typeCode, apx.REFERENCE_TYPE_CODE)
         self.assertIs(dataElement.typeReference, type_list[0])
@@ -399,7 +408,7 @@ class test_elem_size(unittest.TestCase):
         dsg = apx.DataSignature('s[16]')
         self.assertEqual(dsg.packLen(), 2*16)
 
-    def test_U32AR(self):
+    def test_S32AR(self):
         dsg = apx.DataSignature('l[32]')
         self.assertEqual(dsg.packLen(), 4*32)
 
