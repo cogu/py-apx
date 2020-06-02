@@ -87,6 +87,8 @@ class Node:
                 return "%d"%item.value
         elif isinstance(item,autosar.constant.StringValue):
             return '"%s"'%item.value
+        elif isinstance(item, autosar.constant.BooleanValue):
+            return "1" if item.value else "0"
         elif isinstance(item,autosar.constant.RecordValue):
             tmp = [self._deriveInitValueFromAutosarConstant(x) for x in item.elements]
             return "{"+','.join(tmp)+"}"
