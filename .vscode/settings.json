@@ -2,4 +2,5 @@
     "python.linting.pylintEnabled": true,
     "python.linting.enabled": true,
     "editor.detectIndentation": true,
+    "restructuredtext.confPath": "${workspaceFolder}\\doc",
 }
