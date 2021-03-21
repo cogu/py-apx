@@ -2,7 +2,6 @@
 *.komodoproject
 
 # Compiled python modules.
-*.pyc
 __pycache__/
 
 # Setuptools distribution folder.
@@ -10,10 +9,10 @@ __pycache__/
 /build/
 
 # Python egg metadata, regenerated from source files by setuptools.
-/*.egg-info
+/src/apx.egg-info/*
 
 #sphinx-doc files
 /doc/_build/
 
-examples/generator_dev
-examples/doctest
+#other
+_old
