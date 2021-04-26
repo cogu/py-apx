@@ -84,6 +84,9 @@ class Client:
     def set_listener(self, dataListener):
         self.dataListener = dataListener
 
+    def notify_all_require_ports(self):
+        self.nodeData.notify_all_require_port_data()
+
     def on_require_port_data(self, port, value):
         if self.dataListener:
             self.dataListener.on_data(port, value)
