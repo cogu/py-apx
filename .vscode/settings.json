@@ -3,4 +3,14 @@
     "python.linting.enabled": true,
     "editor.detectIndentation": true,
     "restructuredtext.confPath": "${workspaceFolder}\\doc",
+    "python.testing.unittestArgs": [
+        "-v",
+        "-s",
+        "./tests",
+        "-p",
+        "test_*.py"
+    ],
+    "python.testing.pytestEnabled": false,
+    "python.testing.nosetestsEnabled": false,
+    "python.testing.unittestEnabled": true,
 }
