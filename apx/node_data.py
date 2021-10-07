@@ -110,9 +110,11 @@ class NodeData():
 
    def notify_all_require_port_data(self):
       if self.nodeDataClient is not None and self.inPortDataFile is not None:
-         for (port, data_offset, data_len) in self.byte_to_port(0, file_len - 1):
-            value = self._unpackRequirePort(port.id, data_offset, data_len)
-            self.nodeDataClient.on_require_port_data(port, value)
+         file_len = len(self.inPortByteMap)
+         if file_len > 0:
+            for (port, data_offset, data_len) in self.byte_to_port(0, file_len - 1):
+               value = self._unpackRequirePort(port.id, data_offset, data_len)
+               self.nodeDataClient.on_require_port_data(port, value)
 
    def byte_to_port(self, start_offset, data_len):
       """
