@@ -8,12 +8,12 @@ class MyDataListener(apx.DataListener):
     def on_data(self, port, data):
         print("%s: %s"%(port.name, str(data)))
 
-if __name__ == '__main__':    
+if __name__ == '__main__':
     node = apx.Node('TestNode1')
     node.append(apx.ProvidePort('TestSignal1','S'))
     node.append(apx.RequirePort('TestSignal2','S'))
     value=1
-    
+
     with apx.Client(node) as client:
         client.set_listener(MyDataListener())
         client.write_port('TestSignal1',value)
