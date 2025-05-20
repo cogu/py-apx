@@ -141,6 +141,8 @@ class NodeData():
          port_id = port_id.id
       if not isinstance(port_id, int):
          raise ValueError('port_id must be integer')
+      if not value in range(0x7fff * 2 + 1):
+         raise ValueError("the provided value does not conform to range: 0 <= value <= 0x7fff * 2 + 1")
       port_map = self.outPortDataMap[port_id]
       assert(port_id == port_map.port.id)
       return self._packProvidePort(port_id, port_map.data_offset, port_map.data_len, value)
