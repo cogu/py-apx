@@ -141,10 +141,21 @@ class NodeData():
          port_id = port_id.id
       if not isinstance(port_id, int):
          raise ValueError('port_id must be integer')
-      if not value in range(0x7fff * 2 + 1):
-         raise ValueError("the provided value does not conform to range: 0 <= value <= 0x7fff * 2 + 1")
       port_map = self.outPortDataMap[port_id]
-      assert(port_id == port_map.port.id)
+      assert port_id == port_map.port.id
+      try:
+         format_by_len = {
+               1: "<B",
+               2: "<H",
+               4: "<I",
+               8: "<Q",
+         }
+         fmt = format_by_len.get(port_map.data_len)
+         if not fmt:
+            raise ValueError(f"Unsupported port data length: {port_map.data_len}")
+         struct.pack(fmt, value)
+      except struct.error as e:
+         raise ValueError(f"Value {value} is invalid for port {port_id}") from e
       return self._packProvidePort(port_id, port_map.data_offset, port_map.data_len, value)
 
    def read_provide_port(self, port_id):
