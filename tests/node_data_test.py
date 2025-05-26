@@ -339,6 +339,22 @@ class TestNodeDataWrite(unittest.TestCase):
       node_data.write_provide_port(ComplexRecordSignal_port, {"SensorData": dict(x = 1, y =2, z= 3), 'TimeStamp':0})
       self.assertEqual(output_file.read(ComplexRecordSignal_offset, ComplexRecordSignal_length), struct.pack("<HHHL", 1,  2,  3, 0))
 
+   def test_write_value_outside_valid_range(self):
+      node = create_node_and_data()
+      node_data = apx.NodeData(node)
+      VehicleSpeed_port = node.find('VehicleSpeed')
+      VehicleSpeed_offset = 0
+      VehicleSpeed_length = 2
+      output_file = node_data.outPortDataFile
+      #verify init value
+      self.assertEqual(output_file.read(VehicleSpeed_offset, VehicleSpeed_length), bytes([0xFF, 0xFF]))
+      # Test
+      with self.assertRaises(struct.error):
+         node_data.write_provide_port(VehicleSpeed_port, 65536)
+      # Verify that it's possible to write valid value afterwards
+      node_data.write_provide_port(VehicleSpeed_port, 0x1234)
+      self.assertEqual(output_file.read(VehicleSpeed_offset, VehicleSpeed_length), bytes([0x34, 0x12]))
+
    def test_write_string(self):
       node = apx.Node('TestNode')
       port = node.append(apx.ProvidePort('StrSignal', 'a[6]', '=""'))

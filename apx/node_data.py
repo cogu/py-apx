@@ -158,9 +158,11 @@ class NodeData():
       program = self.outPortPrograms[port_id]
       data = bytearray(data_len)
       self.lock.acquire()
-      self.vm.exec_pack_prog(program, data, 0, value)
-      self.outPortValues[port_id]=value
-      self.lock.release()
+      try:
+         self.vm.exec_pack_prog(program, data, 0, value)
+         self.outPortValues[port_id]=value
+      finally:
+         self.lock.release()
       self.outPortDataFile.write(data_offset, data)
 
    def read_require_port(self, port_id):
@@ -178,9 +180,11 @@ class NodeData():
       if data is None:
          raise RuntimeError('Failed to read data at offset={:d}, len={:d}'.format(data_offset, data_len))
       self.lock.acquire()
-      self.vm.exec_unpack_prog(program, data, 0)
-      value = self.vm.value
-      self.lock.release()
+      try:
+         self.vm.exec_unpack_prog(program, data, 0)
+         value = self.vm.value
+      finally:
+         self.lock.release()
       return value
 
    def mapInPort(self, port, start_offset, data_len):
