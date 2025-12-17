@@ -119,7 +119,7 @@ Std_ReturnType ApxNode_Read_Test_RS16ARPort(sint16 *val)
    {
       val[i] = (int16_t) unpackLE(p,(uint8_t) sizeof(int16_t));
       p+=sizeof(int16_t);
-   }
+   } 
    apx_nodeData_unlockInPortData(&m_nodeData);
    return E_OK;
 }
@@ -148,7 +148,7 @@ Std_ReturnType ApxNode_Read_Test_RU8ARPort(uint8 *val)
    {
       val[i] = (uint8_t) *p;
       p++;
-   }
+   } 
    apx_nodeData_unlockInPortData(&m_nodeData);
    return E_OK;
 }
@@ -221,7 +221,7 @@ Std_ReturnType ApxNode_Write_Test_PS8ARPort(sint8 *val)
    {
       *p=(uint8_t) val[i];
       p++;
-   }
+   } 
    apx_nodeData_outPortDataWriteNotify(&m_nodeData, 6, 1, false);
    return E_OK;
 }
@@ -244,7 +244,7 @@ Std_ReturnType ApxNode_Write_Test_PU16ARPort(uint16 *val)
    {
       packLE(p,(uint32_t) val[i],(uint8_t) sizeof(uint16_t));
       p+=sizeof(uint16_t);
-   }
+   } 
    apx_nodeData_outPortDataWriteNotify(&m_nodeData, 8, 8, false);
    return E_OK;
 }
@@ -305,7 +305,7 @@ void Test_inPortDataWritten(void *arg, apx_nodeData_t *nodeData, uint32_t offset
       //case APX_RX_OFFSET_RU8LASTPORT:
       default:
          offset = endOffset;
-      }
+      } 
    }
 }
 //////////////////////////////////////////////////////////////////////////////

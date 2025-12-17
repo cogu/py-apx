@@ -111,7 +111,7 @@ Std_ReturnType ApxNode_Read_TestSimple_PS16ARPort256(sint16 *val)
    {
       val[i] = (int16_t) unpackLE(p,(uint8_t) sizeof(int16_t));
       p+=sizeof(int16_t);
-   }
+   } 
    apx_nodeData_unlockInPortData(&m_nodeData);
    return E_OK;
 }
@@ -140,7 +140,7 @@ Std_ReturnType ApxNode_Write_TestSimple_PS16ARPort256(sint16 *val)
    {
       packLE(p,(uint32_t) val[i],(uint8_t) sizeof(int16_t));
       p+=sizeof(int16_t);
-   }
+   } 
    apx_nodeData_outPortDataWriteNotify(&m_nodeData, 0, 512, false);
    return E_OK;
 }

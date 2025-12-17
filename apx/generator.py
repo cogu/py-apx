@@ -81,7 +81,7 @@ class CallbackInfo:
         Creates a new callback mapping. port info must be of type SignalInfo.
         When callback_name is None, no user-defined callback is generated
         """
-        type_name = port_info.func.args[0].typename
+        type_name = port_info.func.params[0].typename
         if callback_name is not None:
             type_info = TypeInfo(port_info.name, type_name, port_info.arrayLen)
             self.local_vars.append(type_info)
@@ -112,7 +112,7 @@ class CallbackInfo:
         code.append(C.statement('break', indent=self.indent))
         elem.code_fragment = code
         if callback_name is not None:
-            self.functions.append(C.function(callback_name, 'void', args=[C.variable('value', elem.type_name, pointer=port_info.dsg.isComplexType())]))
+            self.functions.append(C.function(callback_name, 'void', params=[C.variable('value', elem.type_name, pointer=port_info.dsg.isComplexType())]))
 
 
 class NodeGenerator:
@@ -188,7 +188,7 @@ class NodeGenerator:
             func = C.function("ApxNode_Read_%s_%s" % (name, port.name), "Std_ReturnType")
             is_pointer=True
             type_name = port.dsg.ctypename(node.dataTypes)
-            func.add_arg(C.variable('val', type_name, pointer=is_pointer))
+            func.add_param(C.variable('val', type_name, pointer=is_pointer))
             packLen=port.dsg.packLen()
             port.dsg.typeList=node.dataTypes
             initValue=None
@@ -211,7 +211,7 @@ class NodeGenerator:
             func = C.function("ApxNode_Write_%s_%s" % (name, port.name), "Std_ReturnType")
             if port.dsg.isComplexType(node.dataTypes):
                 is_pointer=True
-            func.add_arg(C.variable('val', port.dsg.ctypename(node.dataTypes), pointer=is_pointer))
+            func.add_param(C.variable('val', port.dsg.ctypename(node.dataTypes), pointer=is_pointer))
             packLen=port.dsg.packLen()
             port.dsg.typeList= node.dataTypes
             initValue=None
@@ -372,7 +372,7 @@ class NodeGenerator:
         indent+=indentStep
         code=C.block()
         localvar = {'buf': 'm_outPortdata'}
-        val=func.args[0]
+        val=func.params[0]
 
         codeBlock=C.sequence()
         packLen=self.genPackUnpackItem(codeBlock, buf, operation, val, dsg, localvar, offset, indent, indentStep)
@@ -396,7 +396,7 @@ class NodeGenerator:
         if operation=='pack':
             node_data_arg = '&m_nodeData'
             direct_write_arg = 'true' if direct_write else 'false'
-            code.append(C.statement(C.fcall('apx_nodeData_outPortDataWriteNotify', params=[node_data_arg, offset, packLen, direct_write_arg]), indent=indent))
+            code.append(C.statement(C.fcall('apx_nodeData_outPortDataWriteNotify', args=[node_data_arg, offset, packLen, direct_write_arg]), indent=indent))
         else:
             if packLen > 1:
                 code.append(C.statement('apx_nodeData_unlockInPortData(&m_nodeData)', indent=indent))
@@ -431,10 +431,10 @@ class NodeGenerator:
         if self.inPortDataLen>0:
             # void (*inPortDataWritten)(void *arg, struct apx_nodeData_tag *nodeData, uint32_t offset, uint32_t len)
             self.InPortDataNotifyFunc = C.function(self.name+'_inPortDataWritten', 'void')
-            self.InPortDataNotifyFunc.add_arg(C.variable('arg', 'void', pointer=True))
-            self.InPortDataNotifyFunc.add_arg(C.variable('nodeData', 'apx_nodeData_t', pointer=True))
-            self.InPortDataNotifyFunc.add_arg(C.variable('offset', 'uint32_t'))
-            self.InPortDataNotifyFunc.add_arg(C.variable('len', 'uint32_t'))
+            self.InPortDataNotifyFunc.add_param(C.variable('arg', 'void', pointer=True))
+            self.InPortDataNotifyFunc.add_param(C.variable('nodeData', 'apx_nodeData_t', pointer=True))
+            self.InPortDataNotifyFunc.add_param(C.variable('offset', 'uint32_t'))
+            self.InPortDataNotifyFunc.add_param(C.variable('len', 'uint32_t'))
             headerFile.code.append(C.statement(self.InPortDataNotifyFunc))
 
         fp.write(str(headerFile))
@@ -651,7 +651,7 @@ class NodeGenerator:
                 indent-=indentStep
                 body.append(C.statement('} data'))
                 end_offset_var = C.variable('endOffset', 'uint32_t')
-                init_expression = '%s + %s' % (self.InPortDataNotifyFunc.args[2].name, self.InPortDataNotifyFunc.args[3].name)
+                init_expression = '%s + %s' % (self.InPortDataNotifyFunc.params[2].name, self.InPortDataNotifyFunc.params[3].name)
                 body.append(C.statement(str(end_offset_var)+' = '+ init_expression))
                 body.append('')
                 body.append(C.statement('(void)arg'))
@@ -763,16 +763,16 @@ class ComGenerator:
         local_var = self._local_var(com_func)
         if com_func.data_element.dataType.isComplexType:
             var_modifier = '&'
-            body.append(C.line('if (memcmp(%s, %s, sizeof(%s)) != 0)' % (com_func.proto.args[0].name, var_modifier+local_var.inner.name, local_var.inner.name)))
+            body.append(C.line('if (memcmp(%s, %s, sizeof(%s)) != 0)' % (com_func.proto.params[0].name, var_modifier+local_var.inner.name, local_var.inner.name)))
         else:
             var_modifier = ''
-            body.append(C.line('if (%s != %s)' % (com_func.proto.args[0].name, local_var.inner.name)))
+            body.append(C.line('if (%s != %s)' % (com_func.proto.params[0].name, local_var.inner.name)))
         inner_body = C.block(innerIndent=self.inner_indent)
         if com_func.data_element.dataType.isComplexType:
-            inner_body.append(C.statement('memcpy(%s, %s, sizeof(%s))' % (var_modifier+local_var.inner.name, com_func.proto.args[0].name, local_var.inner.name)))
+            inner_body.append(C.statement('memcpy(%s, %s, sizeof(%s))' % (var_modifier+local_var.inner.name, com_func.proto.params[0].name, local_var.inner.name)))
         else:
-            inner_body.append(C.statement('%s = %s' % (local_var.inner.name, com_func.proto.args[0].name)))
-        apx_call = C.statement(C.fcall('ApxNode_Write_%s_%s' % (self.apx_node.name, com_func.port.name), params=[var_modifier+local_var.inner.name]))
+            inner_body.append(C.statement('%s = %s' % (local_var.inner.name, com_func.proto.params[0].name)))
+        apx_call = C.statement(C.fcall('ApxNode_Write_%s_%s' % (self.apx_node.name, com_func.port.name), args=[var_modifier+local_var.inner.name]))
         inner_body.append(apx_call)
         body.append(inner_body)
         body.append(C.statement('return E_OK'))
@@ -780,7 +780,7 @@ class ComGenerator:
 
     def createReceiveBody(self, com_func):
         body = C.block(innerIndent=self.inner_indent)
-        apx_call = C.statement(C.fcall('ApxNode_Read_%s_%s' % (self.apx_node.name, com_func.port.name), params=[com_func.proto.args[0].name]))
+        apx_call = C.statement(C.fcall('ApxNode_Read_%s_%s' % (self.apx_node.name, com_func.port.name), args=[com_func.proto.params[0].name]))
         body.append(apx_call)
         body.append(C.statement('return E_OK'))
         com_func.body = body
