@@ -124,10 +124,10 @@ class Node:
         assert(ws is not None)
         dataType=self._updateDataType(ws, port)
         if dataType is not None:
-            if isinstance(port, autosar.component.RequirePort):
+            if isinstance(port, autosar.port.RequirePort):
                 apx_port = apx.RequirePort(port.name, "T[%s]"%dataType.id, self._calcAttributeFromAutosarPort(ws, port))
                 return self.add_require_port(apx_port)
-            elif isinstance(port, autosar.component.ProvidePort):
+            elif isinstance(port, autosar.port.ProvidePort):
                 apx_port = apx.ProvidePort(port.name, "T[%s]"%dataType.id, self._calcAttributeFromAutosarPort(ws, port))
                 return self.add_provide_port(apx_port)
             else:
@@ -145,7 +145,7 @@ class Node:
             return self.add_require_port(item)
         elif isinstance(item, apx.ProvidePort):
             return self.add_provide_port(item)
-        elif isinstance(item, autosar.component.Port):
+        elif isinstance(item, autosar.port.Port):
             return self.add_autosar_port(item)
         elif isinstance(item, str):
             parts = apx_split_line(item)

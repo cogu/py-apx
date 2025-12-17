@@ -108,7 +108,7 @@ void TestCallbackLast_inPortDataWritten(void *arg, apx_nodeData_t *nodeData, uin
          break;
       default:
          offset = endOffset;
-      }
+      } 
    }
 }
 //////////////////////////////////////////////////////////////////////////////

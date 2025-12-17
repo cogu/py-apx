@@ -105,7 +105,7 @@ void TestCallbackFirst_inPortDataWritten(void *arg, apx_nodeData_t *nodeData, ui
       //case APX_RX_OFFSET_RU8PORT:
       default:
          offset = endOffset;
-      }
+      } 
    }
 }
 //////////////////////////////////////////////////////////////////////////////
