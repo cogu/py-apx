@@ -889,11 +889,16 @@ class AutosarDataType(DataType):
       if isinstance(dataType,autosar.datatype.IntegerDataType):
          return _getIntegerTypeCode(dataType)
       elif isinstance(dataType,autosar.datatype.ArrayDataType):
-         typeCode = _getIntegerTypeCode(typeData.find(dataType['typeRef']))
+         elementType = ws.find(dataType.typeRef)
+         if elementType is None:
+            raise ValueError("Invalid reference: %s"%dataType.typeRef)
+         if isinstance(elementType, (autosar.datatype.ArrayDataType, autosar.datatype.RecordDataType)):
+            raise TypeError("Array of struct or array of array is not supported")
+         typeCode = _getIntegerTypeCode(elementType)
          if typeCode != None:
             return "%s[%d]"%(typeCode,int(dataType.length))
          else:
-            raise Exception("unsupported type: %s"%typeData.find(dataType['typeRef']))
+            raise Exception("unsupported type: %s"%str(type(elementType)))
       elif isinstance(dataType,autosar.datatype.StringDataType):
          typeCode = 'a'
          if typeCode != None:
