@@ -25,6 +25,7 @@ setup(name='apx',
       author_email='congus8@gmail.com',
       license='MIT',
       install_requires=[
+         'cfile<0.1.5' ,
          'autosar>=0.3.4, <0.3.6'
       ],
       packages=['apx','remotefile'],
