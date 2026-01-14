@@ -1,4 +1,4 @@
-__version__ = "0.4.2"
+__version__ = "0.4.3"
 from apx.base import *
 from apx.vm_base import *
 from apx.node import *
