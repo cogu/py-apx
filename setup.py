@@ -8,11 +8,11 @@ def readme():
 
 def test_suite():
     loader = unittest.TestLoader()
-    suite = loader.loadTestsFromModule(test_module)
+    suite = loader.loadTestsFromModule(tests)
     return suite
 
 setup(name='apx',
-      version='0.4.4a1',
+      version='0.4.4b1',
       description='Official APX python toolchain and client',
       long_description=readme(),
       classifiers=[

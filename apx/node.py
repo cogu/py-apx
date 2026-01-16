@@ -69,7 +69,7 @@ class Node:
         """
         returns string
         """
-        if (len(port.comspec)==1) and isinstance(port.comspec[0],autosar.component.DataElementComSpec):
+        if (len(port.comspec)==1) and isinstance(port.comspec[0],autosar.port.DataElementComSpec):
             if port.comspec[0].initValueRef is not None:
                 initValue = ws.find(port.comspec[0].initValueRef)
                 if initValue is None:
