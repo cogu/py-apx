@@ -859,7 +859,7 @@ class AutosarDataType(DataType):
       self.dsg=DataSignature(self._calcDataSignature(ws,dataType), parent)
       typeSemantics = ws.find('/DataType/DataTypeSemantics/%s'%dataType.name)
       if typeSemantics is not None:
-         self.attr = self._calcAttribute(dataType,typeSemantics)
+         self.attr = self._calcAttribute(typeSemantics)
       else:
          self.attr=None
 
@@ -869,19 +869,20 @@ class AutosarDataType(DataType):
       else:
          return 'T"%s"%s'%(self.name,self.dsg)
 
-   def _calcAttribute(self,dataType,typeSemantics):
-      if isinstance(typeSemantics,autosar.datatype.CompuMethodConst):
+   def _calcAttribute(self,typeSemantics):
+      if isinstance(typeSemantics, autosar.datatype.CompuMethod):
          values=[]
-         for elem in typeSemantics.elements:
-            assert(isinstance(elem,autosar.datatype.CompuConstElement))
-            if elem.lowerLimit==elem.upperLimit:
-               values.append(elem.textValue)
-            else:
-               num_items = (elem.upperLimit+1)-elem.lowerLimit
-               values.extend([elem.textValue+str(i) for i in range(1, num_items+1)])
+         for elem in typeSemantics.intToPhys.elements:
+            if elem.textValue is not None:
+               if elem.lowerLimit==elem.upperLimit:
+                  values.append(elem.textValue)
+               else:
+                  num_items = (elem.upperLimit+1)-elem.lowerLimit
+                  values.extend([elem.textValue+str(i) for i in range(1, num_items+1)])
+         if not values:
+            return None
          v=','.join(['"%s"'%x for x in values])
          return "VT(%s)"%v
-      return None
 
    def _calcDataSignature(self,ws,dataType):
       if isinstance(dataType,autosar.datatype.BooleanDataType):
