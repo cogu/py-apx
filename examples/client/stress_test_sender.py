@@ -1,3 +1,10 @@
+#!/bin/env python3
+"""
+This script attempts to send as many APX events as possible.
+It's limited by the response time of the receiver.
+
+Launch this script first, then launch stress_test_receiver.py.
+"""
 import os, sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 import apx
@@ -12,7 +19,7 @@ class MyDataListener(apx.DataListener):
 
 if __name__ == '__main__':
 
-    node = apx.Node('TestNode2')
+    node = apx.Node('StressTestSender')
     node.append(apx.RequirePort('StressSignal1','L'))
     node.append(apx.ProvidePort('StressSignal2','L'))
 
