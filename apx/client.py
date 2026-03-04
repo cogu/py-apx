@@ -5,7 +5,7 @@ import abc
 
 class DataListener(metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def on_data(self, port_id, port_name, data):
+    def on_data(self, port, value):
         """
         called by apx.client when a require port has updated its data
         """
