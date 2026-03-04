@@ -243,13 +243,14 @@ class FileManager:
     The FileManager manages local and remote files
     mapped to a point-to-point connection
     """
-    def __init__(self, localFileMap, remoteFileMap):
+    def __init__(self, localFileMap, remoteFileMap, verbose=False):
         assert(isinstance(localFileMap, FileMap))
         assert(isinstance(remoteFileMap, FileMap))
         self.localFileMap = localFileMap
         self.remoteFileMap = remoteFileMap
         self.requestedFiles = {}
         self.byteOrder = '<'  # use '<' for little endian, '>' for big endian
+        self.verbose = verbose
 
         def worker():
             """
@@ -307,7 +308,8 @@ class FileManager:
             self.worker_active = False
 
     def _FileInfo_handler(self, msg):
-        print("_FileInfo_handler")
+        if self.verbose:
+            print("[FileManager] FileInfo_handler")
 
     def attachLocalFile(self, file):
         self.localFileMap.insert(file)
@@ -331,7 +333,8 @@ class FileManager:
         """
         called on new connection
         """
-        print("FileManager.onConnected")
+        if self.verbose:
+            print("[FileManager] onConnected")
         self.msgQueue.put((RMF_MSG_CONNECT, transmitHandler))
         for file in self.localFileMap:
             self.msgQueue.put((RMF_MSG_FILEINFO, packFileInfo(file)))
@@ -354,19 +357,21 @@ class FileManager:
                         requestedFile.digestData = remoteFile.digestData
                         requestedFile.open()
                         self.remoteFileMap.insert(requestedFile)
-                        print("sending request to open file %s" %
-                              requestedFile.name)
+                        if self.verbose:
+                            print("[FileManager] Sending request to open file %s" %requestedFile.name)
                         msg = (RMF_MSG_FILEOPEN, requestedFile.address)
                         self.msgQueue.put(msg)
                     else:
-                        print("[remoteFile.FileManager] FileInfo received for %s but with length=%d, expected length=%d" % (requstedFile.name, remoteFile.length, requstedFile.length))
+                        if self.verbose:
+                            print("[FileManager] FileInfo received for %s but with length=%d, expected length=%d" % (requstedFile.name, remoteFile.length, requstedFile.length))
                 else:
                     self.remoteFileMap.insert(remoteFile)
             elif cmd == RMF_CMD_FILE_OPEN:
                 address = unpackFileOpen(data, self.byteOrder)
                 file = self.localFileMap.findByAddress(address)
                 if file is not None:
-                    print("FileManager.open(%s)" % file.name)
+                    if self.verbose:
+                        print("[FileManager] open(%s)" % file.name)
                     file.open()
                     fileContent = file.read(0, file.length)
                     if fileContent is not None:
@@ -376,10 +381,12 @@ class FileManager:
                 address = unpackFileClose(data, self.byteOrder)
                 file = self.localFileMap.findByAddress(address)
                 if file is not None:
-                    print("FileManager.close(%s)" % file.name)
+                    if self.verbose:
+                        print("[FileManager] close(%s)" % file.name)
                     file.close()
             else:
-                print("[remotefile] unknown command %d" % cmd, file=sys.stderr)
+                if self.verbose:
+                    print("[FileManager] unknown command %d" % cmd, file=sys.stderr)
 
     def _processFileWrite(self, address, more_bit, data):
         remoteFile = self.remoteFileMap.findByAddress(address)
