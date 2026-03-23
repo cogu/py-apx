@@ -1,11 +1,7 @@
 APX
---------
+---
 
-A framework for sending AUTOSAR signal data to non-AUTOSAR applications
-
-**Usage**::
-
-TBD
+A framework for sending AUTOSAR signal data to non-AUTOSAR applications.
 
 Prerequisites
 -------------

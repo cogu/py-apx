@@ -11,16 +11,20 @@ def test_suite():
     suite = loader.loadTestsFromModule(tests)
     return suite
 
-setup(name='apx',
+setup(name='py-apx',
       version='0.4.4',
-      description='Official APX python toolchain and client',
+      description='A framework for sending AUTOSAR signal data to non-AUTOSAR applications',
       long_description=readme(),
+      long_description_content_type='text/x-rst',
+
       classifiers=[
         'Development Status :: 3 - Alpha',
-        'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3.6',
       ],
-      url='http://github.com/cogu/apx/python3',
+      url='http://github.com/cogu/py-apx',
+      project_urls={
+        'Documentation': 'https://py-apx.readthedocs.io/'
+      },
       author='Conny Gustafsson',
       author_email='congus8@gmail.com',
       license='MIT',
