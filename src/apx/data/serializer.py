@@ -29,7 +29,7 @@ class WriteBuffer:
     """
     Write buffer wrapper
     """
-    def __init__(self, data: bytearray) -> None:
+    def __init__(self, data: bytearray | memoryview) -> None:
         self.data = data
         self.write_pos = 0
         self.end_pos = len(data)
@@ -389,7 +389,7 @@ class Serializer:
         self.state = SerializerState()
         self.stack: list[SerializerState] = []
 
-    def set_write_buffer(self, buffer: bytearray) -> None:
+    def set_write_buffer(self, buffer: bytearray | memoryview) -> None:
         """
         Selects the buffer to serialize to
         """

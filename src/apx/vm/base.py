@@ -78,8 +78,7 @@ class Variant(Enum):
     LIMIT_CHECK_INT16 = 7
     LIMIT_CHECK_INT32 = 8
     LIMIT_CHECK_INT64 = 9
-    LIMIT_CHECK_BOOL = 10
-    LIMIT_CHECK_LAST = 10
+    LIMIT_CHECK_LAST = 9
     # OPCODE FLOW_CTRL
     ARRAY_NEXT = 0
     FLOW_CTRL_LAST = 0
@@ -144,10 +143,15 @@ class OperationType(Enum):
     RECORD_SELECT = 10
     ARRAY_NEXT = 11
     PROGRAM_END = 12
+    RECORD_END = 13
 
 
+ProgramHeader = namedtuple(
+    'ProgramHeader',
+    ['program_type', 'data_size', 'is_dynamic', 'is_queued', 'element_size', 'queue_length']
+)
 PackUnpackOperationInfo = namedtuple('PackUnpackOperationInfo', ['type_code', 'array_length', 'is_dynamic_array'])
-RangeCheckOperationInfo = namedtuple('PackUnpackOperationInfo', ['lower_limit', 'upper_limit'])
+RangeCheckOperationInfo = namedtuple('RangeCheckOperationInfo', ['lower_limit', 'upper_limit'])
 
 OPCODE_PACK = OpCode.PACK.value << INSTR_OPCODE_SHIFT
 OPCODE_UNPACK = OpCode.UNPACK.value << INSTR_OPCODE_SHIFT

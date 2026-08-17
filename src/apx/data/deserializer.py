@@ -17,7 +17,7 @@ class ReadBuffer:
     """
     Read buffer wrapper
     """
-    def __init__(self, data: bytearray | bytes) -> None:
+    def __init__(self, data: bytes | bytearray | memoryview) -> None:
         self.data = data
         self.read_pos = 0
         self.end_pos = len(data)
@@ -397,7 +397,7 @@ class Deserializer:
         """
         return self.read_buffer is not None and self.read_buffer.is_valid
 
-    def set_read_buffer(self, buffer: bytes | bytearray) -> None:
+    def set_read_buffer(self, buffer: bytes | bytearray | memoryview) -> None:
         """
         Selects the buffer to read from
         """
