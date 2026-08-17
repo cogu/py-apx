@@ -1,3 +1,7 @@
+"""
+Unit tests for bytecode pack compiler
+"""
+# pylint: disable=missing-class-docstring, missing-function-docstring
 import unittest
 import os
 import sys
@@ -550,6 +554,224 @@ P"Signal"q[2]:={-1, -1}
             apx.vm.base.INSTR_FLAG | apx.vm.base.Variant.INT64.value | apx.vm.base.OPCODE_PACK,
             apx.vm.base.Variant.UINT8.value | apx.vm.base.OPCODE_DATA_SIZE,
             array_len
+        ])
+        self.assertEqual(program, expected)
+
+
+class TestCompilerPackChar(unittest.TestCase):
+
+    def test_pack_char(self):
+        apx_text = """APX/1.3
+N"TestNode"
+P"Signal"a
+"""
+        parser = apx.parser.NodeParser()
+        node = parser.loads(apx_text)
+        self.assertEqual(parser.result, apx_base.NO_ERROR)
+        port = node.provide_ports[0]
+        compiler = apx.vm.compiler.Compiler()
+        result, program = compiler.compile_port(port, apx.vm.base.ProgramType.PACK)
+        self.assertEqual(result, apx_base.NO_ERROR)
+        expected = bytes([
+            apx.vm.base.MAJOR_VERSION,
+            apx.vm.base.MINOR_VERSION,
+            apx.vm.base.HEADER_FLAG_PACK_PROG | apx.vm.base.Variant.UINT8.value,
+            apx.vm.base.CHAR_SIZE,
+            apx.vm.base.Variant.CHAR.value | apx.vm.base.OPCODE_PACK
+        ])
+        self.assertEqual(program, expected)
+
+    def test_pack_char_array(self):
+        apx_text = """APX/1.3
+N"TestNode"
+P"Signal"a[10]
+"""
+        array_len = 10
+        parser = apx.parser.NodeParser()
+        node = parser.loads(apx_text)
+        self.assertEqual(parser.result, apx_base.NO_ERROR)
+        port = node.provide_ports[0]
+        compiler = apx.vm.compiler.Compiler()
+        result, program = compiler.compile_port(port, apx.vm.base.ProgramType.PACK)
+        self.assertEqual(result, apx_base.NO_ERROR)
+        expected = bytes([
+            apx.vm.base.MAJOR_VERSION,
+            apx.vm.base.MINOR_VERSION,
+            apx.vm.base.HEADER_FLAG_PACK_PROG | apx.vm.base.Variant.UINT8.value,
+            apx.vm.base.CHAR_SIZE * array_len,
+            apx.vm.base.INSTR_FLAG | apx.vm.base.Variant.CHAR.value | apx.vm.base.OPCODE_PACK,
+            apx.vm.base.Variant.UINT8.value | apx.vm.base.OPCODE_DATA_SIZE,
+            array_len
+        ])
+        self.assertEqual(program, expected)
+
+
+class TestCompilerPackChar8(unittest.TestCase):
+
+    def test_pack_char8(self):
+        apx_text = """APX/1.3
+N"TestNode"
+P"Signal"A
+"""
+        parser = apx.parser.NodeParser()
+        node = parser.loads(apx_text)
+        self.assertEqual(parser.result, apx_base.NO_ERROR)
+        port = node.provide_ports[0]
+        compiler = apx.vm.compiler.Compiler()
+        result, program = compiler.compile_port(port, apx.vm.base.ProgramType.PACK)
+        self.assertEqual(result, apx_base.NO_ERROR)
+        expected = bytes([
+            apx.vm.base.MAJOR_VERSION,
+            apx.vm.base.MINOR_VERSION,
+            apx.vm.base.HEADER_FLAG_PACK_PROG | apx.vm.base.Variant.UINT8.value,
+            apx.vm.base.CHAR8_SIZE,
+            apx.vm.base.Variant.CHAR8.value | apx.vm.base.OPCODE_PACK
+        ])
+        self.assertEqual(program, expected)
+
+    def test_pack_char8_array(self):
+        apx_text = """APX/1.3
+N"TestNode"
+P"Signal"A[10]
+"""
+        array_len = 10
+        parser = apx.parser.NodeParser()
+        node = parser.loads(apx_text)
+        self.assertEqual(parser.result, apx_base.NO_ERROR)
+        port = node.provide_ports[0]
+        compiler = apx.vm.compiler.Compiler()
+        result, program = compiler.compile_port(port, apx.vm.base.ProgramType.PACK)
+        self.assertEqual(result, apx_base.NO_ERROR)
+        expected = bytes([
+            apx.vm.base.MAJOR_VERSION,
+            apx.vm.base.MINOR_VERSION,
+            apx.vm.base.HEADER_FLAG_PACK_PROG | apx.vm.base.Variant.UINT8.value,
+            apx.vm.base.CHAR8_SIZE * array_len,
+            apx.vm.base.INSTR_FLAG | apx.vm.base.Variant.CHAR8.value | apx.vm.base.OPCODE_PACK,
+            apx.vm.base.Variant.UINT8.value | apx.vm.base.OPCODE_DATA_SIZE,
+            array_len
+        ])
+        self.assertEqual(program, expected)
+
+
+class TestCompilerPackBool(unittest.TestCase):
+
+    def test_pack_bool(self):
+        apx_text = """APX/1.3
+N"TestNode"
+P"Signal"b:=0
+"""
+        parser = apx.parser.NodeParser()
+        node = parser.loads(apx_text)
+        self.assertEqual(parser.result, apx_base.NO_ERROR)
+        port = node.provide_ports[0]
+        compiler = apx.vm.compiler.Compiler()
+        result, program = compiler.compile_port(port, apx.vm.base.ProgramType.PACK)
+        self.assertEqual(result, apx_base.NO_ERROR)
+        expected = bytes([
+            apx.vm.base.MAJOR_VERSION,
+            apx.vm.base.MINOR_VERSION,
+            apx.vm.base.HEADER_FLAG_PACK_PROG | apx.vm.base.Variant.UINT8.value,
+            apx.vm.base.UINT8_SIZE,
+            apx.vm.base.Variant.BOOL.value | apx.vm.base.OPCODE_PACK
+        ])
+        self.assertEqual(program, expected)
+
+    def test_pack_bool_array(self):
+        apx_text = """APX/1.3
+N"TestNode"
+P"Signal"b[2]
+"""
+        array_len = 2
+        parser = apx.parser.NodeParser()
+        node = parser.loads(apx_text)
+        self.assertEqual(parser.result, apx_base.NO_ERROR)
+        port = node.provide_ports[0]
+        compiler = apx.vm.compiler.Compiler()
+        result, program = compiler.compile_port(port, apx.vm.base.ProgramType.PACK)
+        self.assertEqual(result, apx_base.NO_ERROR)
+        expected = bytes([
+            apx.vm.base.MAJOR_VERSION,
+            apx.vm.base.MINOR_VERSION,
+            apx.vm.base.HEADER_FLAG_PACK_PROG | apx.vm.base.Variant.UINT8.value,
+            apx.vm.base.UINT8_SIZE * array_len,
+            apx.vm.base.INSTR_FLAG | apx.vm.base.Variant.BOOL.value | apx.vm.base.OPCODE_PACK,
+            apx.vm.base.Variant.UINT8.value | apx.vm.base.OPCODE_DATA_SIZE,
+            array_len
+        ])
+        self.assertEqual(program, expected)
+
+
+class TestCompilerPackByte(unittest.TestCase):
+
+    def test_pack_byte(self):
+        apx_text = """APX/1.3
+N"TestNode"
+P"Signal"B:=255
+"""
+        parser = apx.parser.NodeParser()
+        node = parser.loads(apx_text)
+        self.assertEqual(parser.result, apx_base.NO_ERROR)
+        port = node.provide_ports[0]
+        compiler = apx.vm.compiler.Compiler()
+        result, program = compiler.compile_port(port, apx.vm.base.ProgramType.PACK)
+        self.assertEqual(result, apx_base.NO_ERROR)
+        expected = bytes([
+            apx.vm.base.MAJOR_VERSION,
+            apx.vm.base.MINOR_VERSION,
+            apx.vm.base.HEADER_FLAG_PACK_PROG | apx.vm.base.Variant.UINT8.value,
+            apx.vm.base.BYTE_SIZE,
+            apx.vm.base.Variant.BYTE.value | apx.vm.base.OPCODE_PACK
+        ])
+        self.assertEqual(program, expected)
+
+    def test_pack_byte_array(self):
+        apx_text = """APX/1.3
+N"TestNode"
+P"Signal"B[2]
+"""
+        array_len = 2
+        parser = apx.parser.NodeParser()
+        node = parser.loads(apx_text)
+        self.assertEqual(parser.result, apx_base.NO_ERROR)
+        port = node.provide_ports[0]
+        compiler = apx.vm.compiler.Compiler()
+        result, program = compiler.compile_port(port, apx.vm.base.ProgramType.PACK)
+        self.assertEqual(result, apx_base.NO_ERROR)
+        expected = bytes([
+            apx.vm.base.MAJOR_VERSION,
+            apx.vm.base.MINOR_VERSION,
+            apx.vm.base.HEADER_FLAG_PACK_PROG | apx.vm.base.Variant.UINT8.value,
+            apx.vm.base.BYTE_SIZE * array_len,
+            apx.vm.base.INSTR_FLAG | apx.vm.base.Variant.BYTE.value | apx.vm.base.OPCODE_PACK,
+            apx.vm.base.Variant.UINT8.value | apx.vm.base.OPCODE_DATA_SIZE,
+            array_len
+        ])
+        self.assertEqual(program, expected)
+
+    def test_pack_dynamic_byte_array(self):
+        apx_text = """APX/1.3
+N"TestNode"
+P"Signal"B[10*]
+"""
+        max_array_len = 10
+        parser = apx.parser.NodeParser()
+        node = parser.loads(apx_text)
+        self.assertEqual(parser.result, apx_base.NO_ERROR)
+        port = node.provide_ports[0]
+        compiler = apx.vm.compiler.Compiler()
+        result, program = compiler.compile_port(port, apx.vm.base.ProgramType.PACK)
+        self.assertEqual(result, apx_base.NO_ERROR)
+        header_flags = apx.vm.base.HEADER_FLAG_DYNAMIC_DATA | apx.vm.base.HEADER_FLAG_PACK_PROG
+        header_flags |= apx.vm.base.Variant.UINT8.value
+        expected = bytes([
+            apx.vm.base.MAJOR_VERSION,
+            apx.vm.base.MINOR_VERSION,
+            header_flags,
+            apx.vm.base.BYTE_SIZE * (1 + max_array_len),
+            apx.vm.base.INSTR_FLAG | apx.vm.base.Variant.BYTE.value | apx.vm.base.OPCODE_PACK,
+            apx.vm.base.INSTR_FLAG | apx.vm.base.Variant.ARRAY_SIZE_UINT8.value | apx.vm.base.OPCODE_DATA_SIZE,
+            max_array_len
         ])
         self.assertEqual(program, expected)
 

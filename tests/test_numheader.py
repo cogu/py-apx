@@ -1,3 +1,7 @@
+"""
+Unit tests for NumHeader encoding and decoding
+"""
+# pylint: disable=missing-class-docstring, missing-function-docstring
 import os
 import sys
 import unittest

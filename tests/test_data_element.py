@@ -1,3 +1,7 @@
+"""
+Unit tests for DataElement model
+"""
+# pylint: disable=missing-class-docstring, missing-function-docstring
 import unittest
 import os
 import sys

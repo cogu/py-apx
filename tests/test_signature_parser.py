@@ -11,7 +11,7 @@ import apx.model as apx_model  # noqa E402
 from apx.parser import SignatureParser  # noqa E402
 
 
-class TestSignatureParser(unittest.TestCase):
+class TestSignatureParserUint8(unittest.TestCase):
 
     def test_parse_uint8(self):
         parser = SignatureParser()
@@ -64,6 +64,9 @@ class TestSignatureParser(unittest.TestCase):
         self.assertEqual(lower_limit, 0)
         self.assertEqual(upper_limit, 7)
 
+
+class TestSignatureParserUint16(unittest.TestCase):
+
     def test_parse_uint16(self):
         parser = SignatureParser()
         result = parser.parse_signature('S')
@@ -114,6 +117,9 @@ class TestSignatureParser(unittest.TestCase):
         self.assertEqual(lower_limit, 0)
         self.assertEqual(upper_limit, 1023)
 
+
+class TestSignatureParserUint32(unittest.TestCase):
+
     def test_parse_uint32(self):
         parser = SignatureParser()
         result = parser.parse_signature('L')
@@ -129,7 +135,6 @@ class TestSignatureParser(unittest.TestCase):
         result = parser.parse_signature('L(0, 99999)')
         self.assertEqual(result, apx_base.Result.NO_ERROR)
         data_element = parser.take_data_element()
-
         self.assertIsInstance(data_element, apx_model.DataElement)
         self.assertEqual(data_element.type_code, apx_base.TypeCode.UINT32)
         self.assertTrue(data_element.has_limits)
@@ -164,6 +169,9 @@ class TestSignatureParser(unittest.TestCase):
         lower_limit, upper_limit = data_element.get_limits()
         self.assertEqual(lower_limit, 0)
         self.assertEqual(upper_limit, 99999)
+
+
+class TestSignatureParserUint64(unittest.TestCase):
 
     def test_parse_uint64(self):
         parser = SignatureParser()
@@ -215,6 +223,9 @@ class TestSignatureParser(unittest.TestCase):
         self.assertEqual(lower_limit, 0)
         self.assertEqual(upper_limit, 0x100000000)
 
+
+class TestSignatureParserInt8(unittest.TestCase):
+
     def test_parse_int8(self):
         parser = SignatureParser()
         result = parser.parse_signature('c')
@@ -262,6 +273,9 @@ class TestSignatureParser(unittest.TestCase):
         self.assertEqual(lower_limit, -10)
         self.assertEqual(upper_limit, 10)
         self.assertEqual(data_element.array_len, 6)
+
+
+class TestSignatureParserInt16(unittest.TestCase):
 
     def test_parse_int16(self):
         parser = SignatureParser()
@@ -311,6 +325,9 @@ class TestSignatureParser(unittest.TestCase):
         self.assertEqual(upper_limit, 1000)
         self.assertEqual(data_element.array_len, 6)
 
+
+class TestSignatureParserInt32(unittest.TestCase):
+
     def test_parse_int32(self):
         parser = SignatureParser()
         result = parser.parse_signature('l')
@@ -359,6 +376,9 @@ class TestSignatureParser(unittest.TestCase):
         self.assertEqual(upper_limit, 100000)
         self.assertEqual(data_element.array_len, 6)
 
+
+class TestSignatureParserInt64(unittest.TestCase):
+
     def test_parse_int64(self):
         parser = SignatureParser()
         result = parser.parse_signature('q')
@@ -406,6 +426,140 @@ class TestSignatureParser(unittest.TestCase):
         self.assertEqual(lower_limit, -100000)
         self.assertEqual(upper_limit, 100000)
         self.assertEqual(data_element.array_len, 6)
+
+
+class TestSignatureParserChar(unittest.TestCase):
+
+    def test_parse_char(self):
+        parser = SignatureParser()
+        result = parser.parse_signature('a')
+        self.assertEqual(result, apx_base.Result.NO_ERROR)
+        data_element = parser.take_data_element()
+        self.assertIsInstance(data_element, apx_model.DataElement)
+        self.assertEqual(data_element.type_code, apx_base.TypeCode.CHAR)
+        self.assertFalse(data_element.has_limits)
+        self.assertFalse(data_element.is_array)
+
+    def test_parse_char_array(self):
+        parser = SignatureParser()
+        result = parser.parse_signature('a[32]')
+        self.assertEqual(result, apx_base.Result.NO_ERROR)
+        data_element = parser.take_data_element()
+        self.assertIsInstance(data_element, apx_model.DataElement)
+        self.assertEqual(data_element.type_code, apx_base.TypeCode.CHAR)
+        self.assertFalse(data_element.has_limits)
+        self.assertTrue(data_element.is_array)
+        self.assertFalse(data_element.is_dynamic_array)
+        self.assertEqual(data_element.array_len, 32)
+
+    def test_parse_dynamic_char_array(self):
+        parser = SignatureParser()
+        result = parser.parse_signature('a[256*]')
+        self.assertEqual(result, apx_base.Result.NO_ERROR)
+        data_element = parser.take_data_element()
+        self.assertIsInstance(data_element, apx_model.DataElement)
+        self.assertEqual(data_element.type_code, apx_base.TypeCode.CHAR)
+        self.assertFalse(data_element.has_limits)
+        self.assertTrue(data_element.is_array)
+        self.assertTrue(data_element.is_dynamic_array)
+        self.assertEqual(data_element.array_len, 256)
+
+    def test_parse_char_array_with_limits(self):
+        parser = SignatureParser()
+        result = parser.parse_signature('a(0,127)[20]')
+        self.assertEqual(result, apx_base.Result.PARSE_ERROR)
+        # Parsing should stop on '('-character. Limits is not allowed on character types.
+        self.assertEqual(1, parser.read_position)
+
+
+class TestSignatureParserChar8(unittest.TestCase):
+
+    def test_parse_char8(self):
+        parser = SignatureParser()
+        result = parser.parse_signature('A')
+        self.assertEqual(result, apx_base.Result.NO_ERROR)
+        data_element = parser.take_data_element()
+        self.assertIsInstance(data_element, apx_model.DataElement)
+        self.assertEqual(data_element.type_code, apx_base.TypeCode.CHAR8)
+        self.assertFalse(data_element.has_limits)
+        self.assertFalse(data_element.is_array)
+
+    def test_parse_char8_array(self):
+        parser = SignatureParser()
+        result = parser.parse_signature('A[32]')
+        self.assertEqual(result, apx_base.Result.NO_ERROR)
+        data_element = parser.take_data_element()
+        self.assertIsInstance(data_element, apx_model.DataElement)
+        self.assertEqual(data_element.type_code, apx_base.TypeCode.CHAR8)
+        self.assertFalse(data_element.has_limits)
+        self.assertTrue(data_element.is_array)
+        self.assertFalse(data_element.is_dynamic_array)
+        self.assertEqual(data_element.array_len, 32)
+
+    def test_parse_dynamic_char8_array(self):
+        parser = SignatureParser()
+        result = parser.parse_signature('A[256*]')
+        self.assertEqual(result, apx_base.Result.NO_ERROR)
+        data_element = parser.take_data_element()
+        self.assertIsInstance(data_element, apx_model.DataElement)
+        self.assertEqual(data_element.type_code, apx_base.TypeCode.CHAR8)
+        self.assertFalse(data_element.has_limits)
+        self.assertTrue(data_element.is_array)
+        self.assertTrue(data_element.is_dynamic_array)
+        self.assertEqual(data_element.array_len, 256)
+
+
+class TestSignatureParserChar16(unittest.TestCase):
+
+    def test_parse_char16(self):
+        parser = SignatureParser()
+        result = parser.parse_signature('u')
+        self.assertEqual(result, apx_base.Result.NO_ERROR)
+        data_element = parser.take_data_element()
+        self.assertIsInstance(data_element, apx_model.DataElement)
+        self.assertEqual(data_element.type_code, apx_base.TypeCode.CHAR16)
+        self.assertFalse(data_element.has_limits)
+        self.assertFalse(data_element.is_array)
+
+    def test_parse_char16_array(self):
+        parser = SignatureParser()
+        result = parser.parse_signature('u[32]')
+        self.assertEqual(result, apx_base.Result.NO_ERROR)
+        data_element = parser.take_data_element()
+        self.assertIsInstance(data_element, apx_model.DataElement)
+        self.assertEqual(data_element.type_code, apx_base.TypeCode.CHAR16)
+        self.assertFalse(data_element.has_limits)
+        self.assertTrue(data_element.is_array)
+        self.assertFalse(data_element.is_dynamic_array)
+        self.assertEqual(data_element.array_len, 32)
+
+
+class TestSignatureParserChar32(unittest.TestCase):
+
+    def test_parse_char32(self):
+        parser = SignatureParser()
+        result = parser.parse_signature('U')
+        self.assertEqual(result, apx_base.Result.NO_ERROR)
+        data_element = parser.take_data_element()
+        self.assertIsInstance(data_element, apx_model.DataElement)
+        self.assertEqual(data_element.type_code, apx_base.TypeCode.CHAR32)
+        self.assertFalse(data_element.has_limits)
+        self.assertFalse(data_element.is_array)
+
+    def test_parse_char32_array(self):
+        parser = SignatureParser()
+        result = parser.parse_signature('U[32]')
+        self.assertEqual(result, apx_base.Result.NO_ERROR)
+        data_element = parser.take_data_element()
+        self.assertIsInstance(data_element, apx_model.DataElement)
+        self.assertEqual(data_element.type_code, apx_base.TypeCode.CHAR32)
+        self.assertFalse(data_element.has_limits)
+        self.assertTrue(data_element.is_array)
+        self.assertFalse(data_element.is_dynamic_array)
+        self.assertEqual(data_element.array_len, 32)
+
+
+class TestSignatureParserByte(unittest.TestCase):
 
     def test_parse_byte(self):
         parser = SignatureParser()
@@ -483,124 +637,8 @@ class TestSignatureParser(unittest.TestCase):
         self.assertEqual(lower_limit, 0)
         self.assertEqual(upper_limit, 7)
 
-    def test_parse_char(self):
-        parser = SignatureParser()
-        result = parser.parse_signature('a')
-        self.assertEqual(result, apx_base.Result.NO_ERROR)
-        data_element = parser.take_data_element()
-        self.assertIsInstance(data_element, apx_model.DataElement)
-        self.assertEqual(data_element.type_code, apx_base.TypeCode.CHAR)
-        self.assertFalse(data_element.has_limits)
-        self.assertFalse(data_element.is_array)
 
-    def test_parse_char8(self):
-        parser = SignatureParser()
-        result = parser.parse_signature('A')
-        self.assertEqual(result, apx_base.Result.NO_ERROR)
-        data_element = parser.take_data_element()
-        self.assertIsInstance(data_element, apx_model.DataElement)
-        self.assertEqual(data_element.type_code, apx_base.TypeCode.CHAR8)
-        self.assertFalse(data_element.has_limits)
-        self.assertFalse(data_element.is_array)
-
-    def test_parse_char16(self):
-        parser = SignatureParser()
-        result = parser.parse_signature('u')
-        self.assertEqual(result, apx_base.Result.NO_ERROR)
-        data_element = parser.take_data_element()
-        self.assertIsInstance(data_element, apx_model.DataElement)
-        self.assertEqual(data_element.type_code, apx_base.TypeCode.CHAR16)
-        self.assertFalse(data_element.has_limits)
-        self.assertFalse(data_element.is_array)
-
-    def test_parse_char32(self):
-        parser = SignatureParser()
-        result = parser.parse_signature('U')
-        self.assertEqual(result, apx_base.Result.NO_ERROR)
-        data_element = parser.take_data_element()
-        self.assertIsInstance(data_element, apx_model.DataElement)
-        self.assertEqual(data_element.type_code, apx_base.TypeCode.CHAR32)
-        self.assertFalse(data_element.has_limits)
-        self.assertFalse(data_element.is_array)
-
-    def test_parse_char_array(self):
-        parser = SignatureParser()
-        result = parser.parse_signature('a[32]')
-        self.assertEqual(result, apx_base.Result.NO_ERROR)
-        data_element = parser.take_data_element()
-        self.assertIsInstance(data_element, apx_model.DataElement)
-        self.assertEqual(data_element.type_code, apx_base.TypeCode.CHAR)
-        self.assertFalse(data_element.has_limits)
-        self.assertTrue(data_element.is_array)
-        self.assertFalse(data_element.is_dynamic_array)
-        self.assertEqual(data_element.array_len, 32)
-
-    def test_parse_dynamic_char_array(self):
-        parser = SignatureParser()
-        result = parser.parse_signature('a[256*]')
-        self.assertEqual(result, apx_base.Result.NO_ERROR)
-        data_element = parser.take_data_element()
-        self.assertIsInstance(data_element, apx_model.DataElement)
-        self.assertEqual(data_element.type_code, apx_base.TypeCode.CHAR)
-        self.assertFalse(data_element.has_limits)
-        self.assertTrue(data_element.is_array)
-        self.assertTrue(data_element.is_dynamic_array)
-        self.assertEqual(data_element.array_len, 256)
-
-    def test_parse_char8_array(self):
-        parser = SignatureParser()
-        result = parser.parse_signature('A[32]')
-        self.assertEqual(result, apx_base.Result.NO_ERROR)
-        data_element = parser.take_data_element()
-        self.assertIsInstance(data_element, apx_model.DataElement)
-        self.assertEqual(data_element.type_code, apx_base.TypeCode.CHAR8)
-        self.assertFalse(data_element.has_limits)
-        self.assertTrue(data_element.is_array)
-        self.assertFalse(data_element.is_dynamic_array)
-        self.assertEqual(data_element.array_len, 32)
-
-    def test_parse_dynamic_char8_array(self):
-        parser = SignatureParser()
-        result = parser.parse_signature('A[256*]')
-        self.assertEqual(result, apx_base.Result.NO_ERROR)
-        data_element = parser.take_data_element()
-        self.assertIsInstance(data_element, apx_model.DataElement)
-        self.assertEqual(data_element.type_code, apx_base.TypeCode.CHAR8)
-        self.assertFalse(data_element.has_limits)
-        self.assertTrue(data_element.is_array)
-        self.assertTrue(data_element.is_dynamic_array)
-        self.assertEqual(data_element.array_len, 256)
-
-    def test_parse_char16_array(self):
-        parser = SignatureParser()
-        result = parser.parse_signature('u[32]')
-        self.assertEqual(result, apx_base.Result.NO_ERROR)
-        data_element = parser.take_data_element()
-        self.assertIsInstance(data_element, apx_model.DataElement)
-        self.assertEqual(data_element.type_code, apx_base.TypeCode.CHAR16)
-        self.assertFalse(data_element.has_limits)
-        self.assertTrue(data_element.is_array)
-        self.assertFalse(data_element.is_dynamic_array)
-        self.assertEqual(data_element.array_len, 32)
-
-    def test_parse_char32_array(self):
-        parser = SignatureParser()
-        result = parser.parse_signature('U[32]')
-        self.assertEqual(result, apx_base.Result.NO_ERROR)
-        data_element = parser.take_data_element()
-        self.assertIsInstance(data_element, apx_model.DataElement)
-        self.assertEqual(data_element.type_code, apx_base.TypeCode.CHAR32)
-        self.assertFalse(data_element.has_limits)
-        self.assertTrue(data_element.is_array)
-        self.assertFalse(data_element.is_dynamic_array)
-        self.assertEqual(data_element.array_len, 32)
-
-    def test_parse_char_array_with_limits(self):
-        parser = SignatureParser()
-        result = parser.parse_signature('a(0,127)[20]')
-        self.assertEqual(result, apx_base.Result.PARSE_ERROR)
-        # Parsing should stop on '('-character. Limits is not allowed on character types.
-        self.assertEqual(1, parser.read_position)
+class TestSignatureParserRecord(unittest.TestCase):
 
     def test_parse_record_u8_u8_u8(self):
         parser = SignatureParser()
@@ -621,7 +659,10 @@ class TestSignatureParser(unittest.TestCase):
 
     def test_parse_record_u8u8_u8u8(self):
         parser = SignatureParser()
-        signature = '{\"Notification1\"{\"ID1\"C(0,127)\"Stat1\"C(0,3)}\"Notification2\"{\"ID2\"C(0,127)\"Stat2\"C(0,3)}}' # noqa E501
+        signature = (
+            '{"Notification1"{"ID1"C(0,127)"Stat1"C(0,3)}'
+            '"Notification2"{"ID2"C(0,127)"Stat2"C(0,3)}}'
+        )
         result = parser.parse_signature(signature)
         self.assertEqual(result, apx_base.Result.NO_ERROR)
         data_element = parser.take_data_element()
@@ -665,6 +706,26 @@ class TestSignatureParser(unittest.TestCase):
         result = parser.parse_signature('{{\"ID\"C(0,127)\"Stat\"C(0,3)\"Type\"C(0,7)}')
         self.assertEqual(result, apx_base.Result.PARSE_ERROR)
         self.assertEqual(parser.read_position, 1)
+
+    def test_parse_dynamic_array_of_record(self):
+        parser = SignatureParser()
+        result = parser.parse_signature('{"Id"S"Status"b}[50*]')
+        self.assertEqual(result, apx_base.Result.NO_ERROR)
+        data_element = parser.take_data_element()
+        self.assertEqual(data_element.type_code, apx_base.TypeCode.RECORD)
+        self.assertTrue(data_element.is_array)
+        self.assertTrue(data_element.is_dynamic_array)
+        self.assertEqual(data_element.array_len, 50)
+        self.assertEqual(len(data_element.elements), 2)
+        child_element = data_element.elements[0]
+        self.assertEqual(child_element.type_code, apx_base.TypeCode.UINT16)
+        self.assertEqual(child_element.name, "Id")
+        child_element = data_element.elements[1]
+        self.assertEqual(child_element.type_code, apx_base.TypeCode.BOOL)
+        self.assertEqual(child_element.name, "Status")
+
+
+class TestSignatureParserTypeRef(unittest.TestCase):
 
     def test_parse_type_reference_by_id(self):
         parser = SignatureParser()
@@ -733,19 +794,6 @@ class TestSignatureParser(unittest.TestCase):
         self.assertFalse(child_element.is_array)
         self.assertEqual(child_element.typeref, "Type2")
 
-    def test_parse_dynamic_array_of_record(self):
-        parser = SignatureParser()
-        result = parser.parse_signature('{"Id"S"Status"b}[50*]')
-        self.assertEqual(result, apx_base.Result.NO_ERROR)
-        data_element = parser.take_data_element()
-        self.assertEqual(data_element.type_code, apx_base.TypeCode.RECORD)
-        self.assertTrue(data_element.is_array)
-        self.assertTrue(data_element.is_dynamic_array)
-        self.assertTrue(data_element.array_len, 50)
-        self.assertEqual(len(data_element.elements), 2)
-        child_element = data_element.elements[0]
-        self.assertEqual(child_element.type_code, apx_base.TypeCode.UINT16)
-        self.assertEqual(child_element.name, "Id")
-        child_element = data_element.elements[1]
-        self.assertEqual(child_element.type_code, apx_base.TypeCode.BOOL)
-        self.assertEqual(child_element.name, "Status")
+
+if __name__ == '__main__':
+    unittest.main()

@@ -1,10 +1,13 @@
+"""
+Unit tests for manual node creation
+"""
+# pylint: disable=missing-class-docstring, missing-function-docstring
 import os
 import sys
 import unittest
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
 import apx  # noqa E402
 import apx.base as apx_base  # noqa E402
-import apx.model as apx_model  # noqa E402
 
 
 class TestNodeCreation(unittest.TestCase):

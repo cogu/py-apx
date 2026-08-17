@@ -1,5 +1,5 @@
 """
-Unit tests for Data Deserializer
+Unit tests for Data Serializer
 """
 # pylint: disable=missing-class-docstring, missing-function-docstring
 import os

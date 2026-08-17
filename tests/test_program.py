@@ -1,3 +1,7 @@
+"""
+Unit tests for VM Program encoder
+"""
+# pylint: disable=missing-class-docstring, missing-function-docstring
 import unittest
 import os
 import sys
