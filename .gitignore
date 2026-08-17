@@ -12,7 +12,10 @@
 /build/
 
 # Python egg metadata.
-/*.egg-info
+*.egg-info
 
 #sphinx-doc files
 /doc/_build/
+
+#Agent helper files
+/*venv.cmd
