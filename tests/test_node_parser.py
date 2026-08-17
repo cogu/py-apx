@@ -234,37 +234,7 @@ R"UInt8Port"T[0]:=3
         data_type = data_element.typeref
         self.assertEqual(data_type.name, "Type_T")
 
-    def test_parse_record_type_ref_containing_element_typerefs_by_id(self):
-        apx_text = """APX/1.3
-N"TestNode"
-T"FirstType_T"C(0,3)
-T"SecondType_T"C(0,7)
-T"RecordType_T"{"First"T[0]"Second"T[1]}
-R"RecordPort"T[2]:={3,7}
-"""
-        parser = NodeParser()
-        node = parser.loads(apx_text)
-        self.assertEqual(parser.result, apx_base.Result.NO_ERROR)
-        port = node.require_ports[0]
-        self.assertEqual(port.name, 'RecordPort')
-        data_element = port.data_element
-        self.assertEqual(data_element.type_code, apx_base.TypeCode.TYPE_REF_PTR)
-        data_type = data_element.typeref
-        self.assertEqual(data_type.name, "RecordType_T")
-        child_element = data_type.data_element.elements[0]
-        self.assertEqual(child_element.name, "First")
-        self.assertEqual(child_element.type_code, apx_base.TypeCode.TYPE_REF_PTR)
-        ref_child_type = child_element.typeref
-        ref_child_element = ref_child_type.data_element
-        self.assertEqual(ref_child_element.type_code, apx_base.TypeCode.UINT8)
-        child_element = data_type.data_element.elements[1]
-        self.assertEqual(child_element.name, "Second")
-        self.assertEqual(child_element.type_code, apx_base.TypeCode.TYPE_REF_PTR)
-        ref_child_type = child_element.typeref
-        ref_child_element = ref_child_type.data_element
-        self.assertEqual(ref_child_element.type_code, apx_base.TypeCode.UINT8)
-
-    def test_parse_record_notification_T(self):
+    def test_parse_record_notification_t(self):
         apx_text = """APX/1.3
 N"TestNode"
 T"Notification_T"{"ID"C(0,127)"Stat"C(0,3)"Type"C(0,7)}
@@ -363,6 +333,39 @@ P"CharSignal"A
         self.assertEqual(data_element.type_code, apx_base.TypeCode.CHAR8)
         self.assertFalse(data_element.is_array)
 
+
+class TestNodeTypeReferences(unittest.TestCase):
+
+    def test_parse_record_type_ref_containing_element_typerefs_by_id(self):
+        apx_text = """APX/1.3
+N"TestNode"
+T"FirstType_T"C(0,3)
+T"SecondType_T"C(0,7)
+T"RecordType_T"{"First"T[0]"Second"T[1]}
+R"RecordPort"T[2]:={3,7}
+"""
+        parser = NodeParser()
+        node = parser.loads(apx_text)
+        self.assertEqual(parser.result, apx_base.Result.NO_ERROR)
+        port = node.require_ports[0]
+        self.assertEqual(port.name, 'RecordPort')
+        data_element = port.data_element
+        self.assertEqual(data_element.type_code, apx_base.TypeCode.TYPE_REF_PTR)
+        data_type = data_element.typeref
+        self.assertEqual(data_type.name, "RecordType_T")
+        child_element = data_type.data_element.elements[0]
+        self.assertEqual(child_element.name, "First")
+        self.assertEqual(child_element.type_code, apx_base.TypeCode.TYPE_REF_PTR)
+        ref_child_type = child_element.typeref
+        ref_child_element = ref_child_type.data_element
+        self.assertEqual(ref_child_element.type_code, apx_base.TypeCode.UINT8)
+        child_element = data_type.data_element.elements[1]
+        self.assertEqual(child_element.name, "Second")
+        self.assertEqual(child_element.type_code, apx_base.TypeCode.TYPE_REF_PTR)
+        ref_child_type = child_element.typeref
+        ref_child_element = ref_child_type.data_element
+        self.assertEqual(ref_child_element.type_code, apx_base.TypeCode.UINT8)
+
     def test_record_of_records(self):
         apx_text = """APX/1.3
 N"TestNode"
@@ -371,7 +374,6 @@ T"SecondType_T"{"Inner3"S\"Inner4"L}
 T"RecordOfRecordType_T"{"First"T[0]"Second"T[1]}
 R"RecordPort"T[2]:={ {3,0xFFFF}, {0xFFFF, 0xFFFFFFFF} }
 """
-
         parser = NodeParser()
         node = parser.loads(apx_text)
         self.assertEqual(parser.result, apx_base.Result.NO_ERROR)
@@ -389,7 +391,6 @@ N"TestNode"
 T"RecordType_T"{"Id"S"Value"C}
 R"RecordPort"T[0][2]:={ {0xFFFF, 0}, {0xFFFF, 0} }
 """
-
         parser = NodeParser()
         node = parser.loads(apx_text)
         self.assertEqual(parser.result, apx_base.Result.NO_ERROR)
@@ -410,7 +411,6 @@ T"UserId_T"L
 T"UserInfo_T"{"UserName"T[0]"UserId"T[1]}
 R"UserInfo"T[2]
 """
-
         parser = NodeParser()
         node = parser.loads(apx_text)
         self.assertEqual(parser.result, apx_base.Result.NO_ERROR)
@@ -443,7 +443,6 @@ N"TestNode"
 T"Percentage_T"C
 R"FuelLevel"T["Percentage_T"]
 """
-
         parser = NodeParser()
         node = parser.loads(apx_text)
         self.assertEqual(parser.result, apx_base.Result.NO_ERROR)
@@ -462,7 +461,6 @@ T"UserId_T"L
 T"UserInfo_T"{"UserName"T["UserName_T"]"UserId"T["UserId_T"]}
 R"UserInfo"T["UserInfo_T"]
 """
-
         parser = NodeParser()
         node = parser.loads(apx_text)
         self.assertEqual(parser.result, apx_base.Result.NO_ERROR)
@@ -490,6 +488,9 @@ R"UserInfo"T["UserInfo_T"]
         grand_child_element = datatype.data_element
         self.assertEqual(grand_child_element.type_code, apx_base.TypeCode.UINT32)
         self.assertFalse(grand_child_element.is_array)
+
+
+class TestNodeInitValues(unittest.TestCase):
 
     def test_derive_proper_init_value_uint8(self):
         apx_text = """APX/1.3
@@ -720,6 +721,9 @@ R"Signal"A[10]:="café"
         port = node.require_ports[0]
         self.assertEqual(port.proper_init_value, "café")
 
+
+class TestNodeEffectiveElements(unittest.TestCase):
+
     def test_effective_element_uint8(self):
         apx_text = """APX/1.3
 N"TestNode"
@@ -932,3 +936,7 @@ P"Signal"T["Type_T"][4]
         grand_child_element = child_element.elements[2]
         self.assertEqual(grand_child_element.name, "Blue")
         self.assertEqual(grand_child_element.type_code, apx_base.TypeCode.UINT8)
+
+
+if __name__ == '__main__':
+    unittest.main()

@@ -1,7 +1,7 @@
 """
 Unit tests for attribute parser
 """
-# pylint: disable=missing-class-docstring, missing-function-docstring
+# pylint: disable=missing-class-docstring, missing-function-docstring, unsubscriptable-object
 import unittest
 import os
 import sys
@@ -11,9 +11,8 @@ import apx.model as apx_model  # noqa E402
 from apx.parser import AttributeParser  # noqa E402
 
 
-class TestAttributeParser(unittest.TestCase):
+class TestPortAttributeParser(unittest.TestCase):
 
-    # Port Attribute Tests
     def test_parse_empty_attribute_string(self):
         parser = AttributeParser()
         result, dummy = parser.parse_port_attributes('')
@@ -144,7 +143,8 @@ class TestAttributeParser(unittest.TestCase):
         self.assertTrue(attr.has_init_value)
         self.assertTrue(attr.is_parameter)
 
-# Type Attribute Tests
+
+class TestTypeAttributeParser(unittest.TestCase):
 
     def test_traditional_value_table(self):
         parser = AttributeParser()
@@ -279,3 +279,7 @@ class TestAttributeParser(unittest.TestCase):
         self.assertEqual(computation.upper_limit, 65535)
         self.assertEqual(len(computation.values), 1)
         self.assertEqual(computation[0], "NotAvailable")
+
+
+if __name__ == '__main__':
+    unittest.main()
