@@ -23,6 +23,9 @@ class FileSection(Enum):
 
 @dataclass
 class NodeParseState:
+    """
+    Internal parse state for NodeParser.
+    """
     line_number: int = 0
     major_version: int = 0
     minor_version: int = 0

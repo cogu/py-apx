@@ -11,6 +11,9 @@ from apx.parser.base import BaseParser
 
 @dataclass
 class AttributeParseState:
+    """
+    State for attribute parsing
+    """
     parent: Any = None
     scalar_value: Any = None
     initializer_list: Any = None
@@ -27,6 +30,9 @@ class ComputationParseState:
 
     @property
     def lower_limit(self) -> int | None:
+        """
+        Lower limit value.
+        """
         return self._lower_limit
 
     @lower_limit.setter
@@ -35,6 +41,9 @@ class ComputationParseState:
 
     @property
     def upper_limit(self) -> int | None:
+        """
+        Upper limit value.
+        """
         return self._upper_limit
 
     @upper_limit.setter
@@ -320,7 +329,7 @@ class AttributeParser(BaseParser):
                         c = self._read()
                         if c is None:
                             break
-                        elif c == ',':
+                        if c == ',':
                             self._move(1)
                         elif c == ')':
                             vt = self._create_value_table_from_parse_state(vt_state)
@@ -348,7 +357,7 @@ class AttributeParser(BaseParser):
                         c = self._read()
                         if c is None:
                             break
-                        elif c == ',':
+                        if c == ',':
                             self._move(1)
                         elif c == ')':
                             rs = self._create_rational_scaling_from_parse_state(rs_state)

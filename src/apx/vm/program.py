@@ -1,3 +1,6 @@
+"""
+APX byte code program encoder and utilities
+"""
 from struct import Struct
 import apx.base as apx_base
 import apx.vm.base
@@ -13,6 +16,9 @@ s64_struct = Struct("<q")
 
 
 def calc_data_variant(data_size: int) -> apx.vm.base.Variant:
+    """
+    Calculates the appropriate Variant for a given data size in bytes.
+    """
     if data_size <= apx.vm.base.UINT8_MAX:
         return apx.vm.base.Variant.UINT8
     elif data_size <= apx.vm.base.UINT16_MAX:
@@ -24,6 +30,9 @@ def calc_data_variant(data_size: int) -> apx.vm.base.Variant:
 
 
 def get_size_by_variant(variant: apx.vm.base.Variant) -> int:
+    """
+    Returns the byte size corresponding to a size variant.
+    """
     if variant == apx.vm.base.Variant.UINT8:
         return apx.vm.base.UINT8_SIZE
     elif variant == apx.vm.base.Variant.UINT16:
@@ -35,6 +44,9 @@ def get_size_by_variant(variant: apx.vm.base.Variant) -> int:
 
 
 def get_struct_by_variant(variant: apx.vm.base.Variant) -> Struct:
+    """
+    Returns the Struct packer for a given size variant.
+    """
     if variant == apx.vm.base.Variant.UINT8:
         return u8_struct
     elif variant == apx.vm.base.Variant.UINT16:
@@ -49,6 +61,9 @@ def get_struct_by_variant(variant: apx.vm.base.Variant) -> Struct:
 
 def calc_data_size_variant(elem_variant: apx.vm.base.Variant,
                            queue_variant: apx.vm.base.Variant) -> apx.vm.base.Variant:
+    """
+    Calculates the combined data size variant for queued elements.
+    """
     if elem_variant == apx.vm.base.Variant.UINT8:
         data_size_variant = apx.vm.base.Variant.ELEMENT_SIZE_U8_QUEUE_SIZE_UINT8.value + queue_variant.value
     elif elem_variant == apx.vm.base.Variant.UINT16:
@@ -75,7 +90,7 @@ def calc_value_to_size_type(value: int) -> apx.vm.base.SizeType:
         else:
             # Number is too large for APX standard
             return apx.vm.base.SizeType.UNSUPPORTED
-    return apx.vm.base.SizeType.NONE  # TODO: CHANGE TO NONE
+    return apx.vm.base.SizeType.NONE
 
 
 def calc_size_type_to_size(size_type: apx.vm.base.SizeType) -> int:
@@ -95,12 +110,19 @@ def calc_size_type_to_size(size_type: apx.vm.base.SizeType) -> int:
 
 
 class Program:
+    """
+    Encoder and container for APX VM byte code programs and headers.
+    """
+
     def __init__(self) -> None:
         self.header: bytearray = bytearray()
         self.buffer: bytearray = bytearray()
 
     def encode_instruction(self, opcode: apx.vm.base.OpCode, variant: apx.vm.base.Variant,
                            flag: bool) -> apx_base.Result:
+        """
+        Encodes a general VM instruction into the program buffer.
+        """
         variant_part = variant.value & apx.vm.base.INSTR_VARIANT_MASK
         opcode_part = (opcode.value & apx.vm.base.INSTR_OPCODE_MASK) << apx.vm.base.INSTR_OPCODE_SHIFT
         result = variant_part | opcode_part
@@ -111,6 +133,9 @@ class Program:
 
     def encode_header_instruction(self, opcode: apx.vm.base.OpCode, variant: apx.vm.base.Variant,
                                   flag: bool) -> apx_base.Result:
+        """
+        Encodes an instruction into the program header.
+        """
         variant_part = variant.value & apx.vm.base.INSTR_VARIANT_MASK
         opcode_part = (opcode.value & apx.vm.base.INSTR_OPCODE_MASK) << apx.vm.base.INSTR_OPCODE_SHIFT
         result = variant_part | opcode_part
@@ -120,6 +145,9 @@ class Program:
         return apx_base.NO_ERROR
 
     def encode_array_size(self, array_size: int, is_dynamic: bool) -> apx_base.Result:
+        """
+        Encodes array size information into the program buffer.
+        """
         opcode = apx.vm.base.OpCode.DATA_SIZE
         if array_size >= apx.vm.base.UINT32_MAX:
             return apx_base.LENGTH_ERROR
@@ -139,11 +167,17 @@ class Program:
     def encode_limit_check_instruction(self, variant: apx.vm.base.Variant,
                                        lower_limit: int, upper_limit: int,
                                        is_array: bool) -> apx_base.Result:
+        """
+        Encodes a limit check instruction and values into the program buffer.
+        """
         self.encode_instruction(apx.vm.base.OpCode.DATA_CTRL, variant, is_array)
         return self.encode_limit_values(variant, lower_limit, upper_limit)
 
     def encode_limit_values(self, limit_variant: apx.vm.base.Variant,
                             lower_limit: int, upper_limit: int) -> apx_base.Result:
+        """
+        Encodes lower and upper limits into the program buffer.
+        """
         if limit_variant == apx.vm.base.Variant.LIMIT_CHECK_UINT8:
             elem_size = apx.vm.base.UINT8_SIZE
             struct = u8_struct
@@ -160,13 +194,13 @@ class Program:
             elem_size = apx.vm.base.INT8_SIZE
             struct = s8_struct
         elif limit_variant == apx.vm.base.Variant.LIMIT_CHECK_INT16:
-            elem_size = apx.vm.base.INT8_SIZE
+            elem_size = apx.vm.base.INT16_SIZE
             struct = s16_struct
         elif limit_variant == apx.vm.base.Variant.LIMIT_CHECK_INT32:
-            elem_size = apx.vm.base.INT8_SIZE
+            elem_size = apx.vm.base.INT32_SIZE
             struct = s32_struct
         elif limit_variant == apx.vm.base.Variant.LIMIT_CHECK_INT64:
-            elem_size = apx.vm.base.INT8_SIZE
+            elem_size = apx.vm.base.INT64_SIZE
             struct = s64_struct
         else:
             raise NotImplementedError(limit_variant)
@@ -178,6 +212,9 @@ class Program:
 
     def encode_program_header(self, program_type: apx.vm.base.ProgramType,
                               elem_size: int, queue_size: int, is_dynamic: bool) -> apx_base.Result:
+        """
+        Encodes the full APX program header.
+        """
         self.header.extend([apx.vm.base.MAJOR_VERSION, apx.vm.base.MINOR_VERSION])
         is_queued = queue_size > 0
         if is_queued:
@@ -209,7 +246,10 @@ class Program:
     def encode_program_type_byte(
             self, program_type: apx.vm.base.ProgramType, data_size_variant: apx.vm.base.Variant,
             is_dynamic: bool, is_queued: bool) -> None:
-        value = (data_size_variant.value & apx.vm.base.HEADER_DATA_SIZE_VARIANT_MASK)
+        """
+        Encodes the program type and flags byte in the header.
+        """
+        value = data_size_variant.value & apx.vm.base.HEADER_DATA_SIZE_VARIANT_MASK
         if program_type == apx.vm.base.ProgramType.PACK:
             value |= apx.vm.base.HEADER_FLAG_PACK_PROG
         if is_dynamic:
@@ -219,6 +259,9 @@ class Program:
         self.header.append(value)
 
     def encode_field_name(self, name: str) -> apx_base.Result:
+        """
+        Encodes a null-terminated field name string into the program buffer.
+        """
         try:
             self.buffer.extend(bytes(name, 'ascii'))
         except UnicodeEncodeError:

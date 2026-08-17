@@ -4,6 +4,7 @@ Signature parser for APX data elements and signatures
 from dataclasses import dataclass
 from enum import Enum
 import re
+from typing import Callable
 import apx.base as apx_base
 import apx.model as apx_model
 from apx.parser.base import BaseParser
@@ -127,6 +128,9 @@ CHECK_LIMITS = [
 
 @dataclass
 class SignatureParseState:
+    """
+    Internal parse state for SignatureParser.
+    """
     is_record: bool = False
     data_element: apx_model.DataElement | None = None
 
@@ -189,138 +193,92 @@ class SignatureParser(BaseParser):
         is_64_bit_type = bool(type_code in (apx_base.TypeCode.INT64, apx_base.TypeCode.UINT64))
         check_limits = CHECK_LIMITS[i]
         if token_class == TokenClass.DATA_ELEMENT:
-            assert type_code != apx_base.TypeCode.NONE
-            self.state.data_element = apx_model.DataElement(type_code)
-            if element_name is not None:
-                self.state.data_element.name = element_name
-            if type_code == apx_base.TypeCode.TYPE_REF_ID:
-                result = self._parse_type_reference()
-                if result != apx_base.Result.NO_ERROR:
-                    return result
-            if check_limits:
-                if is_64_bit_type:
-                    result = self._parse_limits_i64() if is_signed_type else self._parse_limits_u64()
-                else:
-                    result = self._parse_limits_i32() if is_signed_type else self._parse_limits_u32()
-                if result != apx_base.Result.NO_ERROR:
-                    return result
+            return self._parse_primitive_data_element(
+                type_code, element_name, is_signed_type, is_64_bit_type, check_limits
+            )
+        if token_class == TokenClass.RECORD_DECLARATION:
+            return self._parse_record_declaration(type_code, element_name)
+        raise NotImplementedError(token_class)
+
+    def _parse_primitive_data_element(self,
+                                      type_code: apx_base.TypeCode,
+                                      element_name: str | None,
+                                      is_signed_type: bool,
+                                      is_64_bit_type: bool,
+                                      check_limits: bool) -> apx_base.Result:
+        assert self.state is not None
+        assert type_code != apx_base.TypeCode.NONE
+        self.state.data_element = apx_model.DataElement(type_code)
+        if element_name is not None:
+            self.state.data_element.name = element_name
+        if type_code == apx_base.TypeCode.TYPE_REF_ID:
+            result = self._parse_type_reference()
+            if result != apx_base.Result.NO_ERROR:
+                return result
+        if check_limits:
+            if is_64_bit_type:
+                result = self._parse_limits_i64() if is_signed_type else self._parse_limits_u64()
             else:
-                if self._test_char('('):  # This typecode does not support limits
-                    return apx_base.Result.PARSE_ERROR
-            result = self._parse_array()
+                result = self._parse_limits_i32() if is_signed_type else self._parse_limits_u32()
             if result != apx_base.Result.NO_ERROR:
                 return result
-        elif token_class == TokenClass.RECORD_DECLARATION:
-            self.state.data_element = apx_model.DataElement(type_code)
-            if element_name is not None:
-                self.state.data_element.name = element_name
-            parent = self.state
-            self.state = SignatureParseState(True)
-            assert self.read_position is not None and self.input is not None
-            while self.read_position < len(self.input):
-                result = self.parse_data_element()
-                if result != apx_base.Result.NO_ERROR:
-                    return result
-                assert parent.data_element is not None and self.state.data_element is not None
-                parent.data_element.append(self.state.data_element)
-                self.state.data_element = None
-                if self.read_position == len(self.input):
-                    # Expect signature to end with '}' character
-                    self.state = parent
-                    return apx_base.Result.PARSE_ERROR
-                if self._match_char('}'):
-                    self.state = parent
-                    break
-            result = self._parse_array()
+        elif self._test_char('('):  # This typecode does not support limits
+            return apx_base.Result.PARSE_ERROR
+        return self._parse_array()
+
+    def _parse_record_declaration(self,
+                                  type_code: apx_base.TypeCode,
+                                  element_name: str | None) -> apx_base.Result:
+        assert self.state is not None
+        self.state.data_element = apx_model.DataElement(type_code)
+        if element_name is not None:
+            self.state.data_element.name = element_name
+        parent = self.state
+        self.state = SignatureParseState(True)
+        assert self.read_position is not None and self.input is not None
+        while self.read_position < len(self.input):
+            result = self.parse_data_element()
             if result != apx_base.Result.NO_ERROR:
                 return result
-        else:
-            raise NotImplementedError(token_class)
-        return apx_base.Result.NO_ERROR
+            assert parent.data_element is not None and self.state.data_element is not None
+            parent.data_element.append(self.state.data_element)
+            self.state.data_element = None
+            if self.read_position == len(self.input):
+                # Expect signature to end with '}' character
+                self.state = parent
+                return apx_base.Result.PARSE_ERROR
+            if self._match_char('}'):
+                self.state = parent
+                break
+        return self._parse_array()
+
+    def _parse_limits_helper(self, parse_fn: Callable[[], int | None]) -> apx_base.Result:
+        if not self._test_char('('):
+            return apx_base.Result.NO_ERROR
+        self.read_position = (self.read_position or 0) + 1
+        result = apx_base.Result.PARSE_ERROR
+        if self._lstrip():
+            lower_limit = parse_fn()
+            if lower_limit is not None and self._lstrip() and self._match_char(','):
+                if self._lstrip():
+                    upper_limit = parse_fn()
+                    if upper_limit is not None and self._lstrip() and self._match_char(')'):
+                        assert self.state is not None and self.state.data_element is not None
+                        self.state.data_element.set_limits(lower_limit, upper_limit)
+                        result = apx_base.Result.NO_ERROR
+        return result
 
     def _parse_limits_i64(self) -> apx_base.Result:
-        if self._test_char('('):
-            self.read_position = (self.read_position or 0) + 1
-            if self._lstrip():
-                lower_limit = self.parse_int64()
-                if lower_limit is None:
-                    return apx_base.Result.PARSE_ERROR
-                if self._lstrip():
-                    if self._match_char(','):
-                        if self._lstrip():
-                            upper_limit = self.parse_int64()
-                            if upper_limit is None:
-                                return apx_base.Result.PARSE_ERROR
-                            if self._lstrip():
-                                if self._match_char(')'):
-                                    assert self.state is not None and self.state.data_element is not None
-                                    self.state.data_element.set_limits(lower_limit, upper_limit)
-                                    return apx_base.Result.NO_ERROR
-            return apx_base.Result.PARSE_ERROR
-        return apx_base.Result.NO_ERROR
+        return self._parse_limits_helper(self.parse_int64)
 
     def _parse_limits_u64(self) -> apx_base.Result:
-        if self._test_char('('):
-            self.read_position = (self.read_position or 0) + 1
-            if self._lstrip():
-                lower_limit = self.parse_uint64()
-                if lower_limit is None:
-                    return apx_base.Result.PARSE_ERROR
-                if self._lstrip():
-                    if self._match_char(','):
-                        if self._lstrip():
-                            upper_limit = self.parse_uint64()
-                            if upper_limit is None:
-                                return apx_base.Result.PARSE_ERROR
-                            if self._lstrip():
-                                if self._match_char(')'):
-                                    assert self.state is not None and self.state.data_element is not None
-                                    self.state.data_element.set_limits(lower_limit, upper_limit)
-                                    return apx_base.Result.NO_ERROR
-            return apx_base.Result.PARSE_ERROR
-        return apx_base.Result.NO_ERROR
+        return self._parse_limits_helper(self.parse_uint64)
 
     def _parse_limits_u32(self) -> apx_base.Result:
-        if self._test_char('('):
-            self.read_position = (self.read_position or 0) + 1
-            if self._lstrip():
-                lower_limit = self.parse_uint32()
-                if lower_limit is None:
-                    return apx_base.Result.PARSE_ERROR
-                if self._lstrip():
-                    if self._match_char(','):
-                        if self._lstrip():
-                            upper_limit = self.parse_uint32()
-                            if upper_limit is None:
-                                return apx_base.Result.PARSE_ERROR
-                            if self._lstrip():
-                                if self._match_char(')'):
-                                    assert self.state is not None and self.state.data_element is not None
-                                    self.state.data_element.set_limits(lower_limit, upper_limit)
-                                    return apx_base.Result.NO_ERROR
-            return apx_base.Result.PARSE_ERROR
-        return apx_base.Result.NO_ERROR
+        return self._parse_limits_helper(self.parse_uint32)
 
     def _parse_limits_i32(self) -> apx_base.Result:
-        if self._test_char('('):
-            self.read_position = (self.read_position or 0) + 1
-            if self._lstrip():
-                lower_limit = self.parse_int32()
-                if lower_limit is None:
-                    return apx_base.Result.PARSE_ERROR
-                if self._lstrip():
-                    if self._match_char(','):
-                        if self._lstrip():
-                            upper_limit = self.parse_int32()
-                            if upper_limit is None:
-                                return apx_base.Result.PARSE_ERROR
-                            if self._lstrip():
-                                if self._match_char(')'):
-                                    assert self.state is not None and self.state.data_element is not None
-                                    self.state.data_element.set_limits(lower_limit, upper_limit)
-                                    return apx_base.Result.NO_ERROR
-            return apx_base.Result.PARSE_ERROR
-        return apx_base.Result.NO_ERROR
+        return self._parse_limits_helper(self.parse_int32)
 
     def _parse_array(self) -> apx_base.Result:
         if self._test_char('['):

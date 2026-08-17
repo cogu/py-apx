@@ -1,5 +1,5 @@
 """
-APX data serializer
+APX data deserializer
 """
 import struct
 from typing import Any
@@ -15,7 +15,7 @@ DYNAMIC_SIZE_STRUCT = [
 
 class ReadBuffer:
     """
-    Write buffer wrapper
+    Read buffer wrapper
     """
     def __init__(self, data: bytearray | bytes) -> None:
         self.data = data
@@ -58,6 +58,9 @@ class ReadBuffer:
         self.padded_read_pos = self.read_pos + value
 
     def read_bytes(self, size: int) -> tuple[apx_base.Result, bytearray | None]:
+        """
+        Reads specified number of bytes from the buffer.
+        """
         if size > self.remain:
             return apx_base.Result.BUFFER_BOUNDARY_ERROR, None
         data = bytearray(self.data[self.read_pos:self.read_pos + size])
@@ -110,20 +113,27 @@ class DeserializerState:
 
     @property
     def is_scalar_type_code(self) -> bool:
+        """
+        Returns True if type_code is a scalar type.
+        """
         type_code = self.type_code.value
-        if type_code >= apx_base.TypeCode.UINT8.value and type_code <= apx_base.TypeCode.INT64.value:
+        if apx_base.TypeCode.UINT8.value <= type_code <= apx_base.TypeCode.INT64.value:
             return True
         return self.type_code == apx_base.TypeCode.BOOL
 
     @property
     def is_string_type_code(self) -> bool:
+        """
+        Returns True if type_code is a string type.
+        """
         type_code = self.type_code.value
-        if type_code >= apx_base.TypeCode.CHAR.value and type_code <= apx_base.TypeCode.CHAR32.value:
-            return True
-        return False
+        return apx_base.TypeCode.CHAR.value <= type_code <= apx_base.TypeCode.CHAR32.value
 
     @property
     def is_byte_type_code(self) -> bool:
+        """
+        Returns True if type_code is BYTE.
+        """
         return self.type_code == apx_base.TypeCode.BYTE
 
     def prepare_for_buffer_read(self) -> apx_base.Result:
@@ -174,6 +184,9 @@ class DeserializerState:
         return apx_base.Result.NO_ERROR
 
     def read_value(self) -> apx_base.Result:
+        """
+        Reads value from buffer based on configured type code.
+        """
         if self.dynamic_size_type is not None:
             result = self.read_dynamic_value_from_buffer(self.array_len, self.dynamic_size_type)
             if result != apx_base.Result.NO_ERROR:
@@ -190,6 +203,9 @@ class DeserializerState:
         return apx_base.Result.NOT_IMPLEMENTED_ERROR
 
     def read_string_value(self) -> apx_base.Result:
+        """
+        Reads string value from buffer.
+        """
         assert self.array_len > 0
         result, value = self.buffer.read_bytes(self.array_len)
         if result != apx_base.Result.NO_ERROR:
@@ -217,10 +233,16 @@ class DeserializerState:
         self.value = bytes(value)
         return apx_base.Result.NO_ERROR
 
-    def read_dynamic_value_from_buffer(self, value: int, size_type: apx_base.SizeType) -> apx_base.Result:
+    def read_dynamic_value_from_buffer(self, _value: int, _size_type: apx_base.SizeType) -> apx_base.Result:
+        """
+        Reads dynamic array length from buffer (not implemented in state).
+        """
         return apx_base.Result.NOT_IMPLEMENTED_ERROR
 
     def read_scalar_value(self) -> apx_base.Result:
+        """
+        Reads scalar value from buffer.
+        """
         if self.type_code == apx_base.TypeCode.UINT8:
             self._unpack_uint8_value()
         else:
@@ -229,6 +251,9 @@ class DeserializerState:
         return apx_base.Result.NO_ERROR
 
     def read_array_of_scalar_values(self) -> apx_base.Result:
+        """
+        Reads array of scalar values from buffer.
+        """
         pack_code = self.format_character[self.type_code.value]
         assert pack_code
         fmt_str = f"{self.endianness}{self.array_len}{pack_code}"
@@ -361,6 +386,9 @@ class Deserializer:
 
     @property
     def has_valid_buffer(self) -> bool:
+        """
+        Returns True if read buffer is valid.
+        """
         return self.read_buffer is not None and self.read_buffer.is_valid
 
     def set_read_buffer(self, buffer: bytes | bytearray) -> None:
@@ -371,11 +399,17 @@ class Deserializer:
         self.state.buffer = self.read_buffer
 
     def bytes_read(self) -> int:
+        """
+        Returns current read position in the buffer.
+        """
         if (self.state.buffer is None) or (not self.state.buffer.is_valid):
             return -1
         return self.state.buffer.read_pos
 
     def value(self) -> Any:
+        """
+        Returns current deserialized value.
+        """
         return self.state.value
 
     def check_value_range(self, lower_limit: int, upper_limit: int) -> apx_base.Result:

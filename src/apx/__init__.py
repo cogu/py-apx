@@ -1,8 +1,9 @@
+"""Python APX"""
 from apx.base import Node, RequirePort, ProvidePort, DataType
-import apx.numheader as numheader
-import apx.model as model
-import apx.parser as parser
-import apx.vm as vm
+from apx import numheader
+from apx import model
+from apx import parser
+from apx import vm
 
 __all__ = [
     "Node",

@@ -302,7 +302,7 @@ class BaseParser:
                 else:
                     if c == '"':
                         break
-                    elif c == '\\':
+                    if c == '\\':
                         is_escaped = True
                     else:
                         literal.write(c)

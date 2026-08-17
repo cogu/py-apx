@@ -1,3 +1,6 @@
+"""
+APX byte code virtual machine base definitions and constants
+"""
 from enum import Enum
 from collections import namedtuple
 
@@ -8,11 +11,17 @@ from collections import namedtuple
 
 
 class ProgramType(Enum):
+    """
+    VM program type (PACK or UNPACK)
+    """
     PACK = 0
     UNPACK = 1
 
 
 class OpCode(Enum):
+    """
+    VM instruction opcodes
+    """
     PACK = 0
     UNPACK = 1
     DATA_SIZE = 2
@@ -21,6 +30,9 @@ class OpCode(Enum):
 
 
 class Variant(Enum):
+    """
+    VM instruction opcode variants
+    """
     # OPCODE PACK/UNPACK
     UINT8 = 0
     UINT16 = 1
@@ -74,6 +86,9 @@ class Variant(Enum):
 
 
 class SizeType(Enum):
+    """
+    Data size representation types
+    """
     NONE = 0
     UINT8 = 1
     UINT16 = 2
@@ -113,7 +128,9 @@ MINOR_VERSION = 0x31
 
 
 class OperationType(Enum):
-
+    """
+    VM runtime operation types
+    """
     UNPACK = 0
     PACK = 1
     LIMIT_CHECK_UINT8 = 2

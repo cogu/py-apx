@@ -1,3 +1,6 @@
+"""
+APX model classes and data structures.
+"""
 # Copyright 2026 by Conny Gustafsson.
 # This file is part of the py-apx project and is released under
 # the "MIT License Agreement". Please see the LICENSE
@@ -10,6 +13,9 @@ import apx.base as apx_base
 
 
 def is_scalar_value(value: Any) -> bool:
+    """
+    Returns True if value is a scalar (int or str).
+    """
     if isinstance(value, (int, str)):
         return True
     return False
@@ -35,10 +41,16 @@ class PortAttributes:
 
     @property
     def has_init_value(self) -> bool:
+        """
+        Returns True if an initial value is set.
+        """
         return self.init_value is not None
 
     @property
     def is_queued(self) -> bool:
+        """
+        Returns True if port is queued (queue length > 0).
+        """
         return self.queue_length > 0
 
 
@@ -66,6 +78,9 @@ class Computation:
 
     @property
     def lower_limit(self) -> int | None:
+        """
+        Lower limit value.
+        """
         return self._lower_limit
 
     @lower_limit.setter
@@ -77,6 +92,9 @@ class Computation:
 
     @property
     def upper_limit(self) -> int | None:
+        """
+        Upper limit value.
+        """
         return self._upper_limit
 
     @upper_limit.setter
@@ -96,6 +114,9 @@ class ValueTable(Computation):
         self.values: list[str] = []
 
     def append(self, value: str) -> None:
+        """
+        Appends an enum string value to the value table.
+        """
         self.values.append(value)
 
     def __getitem__(self, index: int) -> str:
@@ -116,6 +137,9 @@ class RationalScaling(Computation):
 
     @property
     def offset(self) -> float:
+        """
+        Offset value for rational scaling.
+        """
         return self._offset
 
     @offset.setter
@@ -124,6 +148,9 @@ class RationalScaling(Computation):
 
     @property
     def numerator(self) -> int:
+        """
+        Numerator for rational scaling factor.
+        """
         return self._numerator
 
     @numerator.setter
@@ -132,6 +159,9 @@ class RationalScaling(Computation):
 
     @property
     def denominator(self) -> int:
+        """
+        Denominator for rational scaling factor.
+        """
         return self._denominator
 
     @denominator.setter
@@ -140,6 +170,9 @@ class RationalScaling(Computation):
 
     @property
     def unit(self) -> str | None:
+        """
+        Unit of measurement.
+        """
         return self._unit
 
     @unit.setter
@@ -172,18 +205,30 @@ class DataElement:
 
     @property
     def has_limits(self) -> bool:
+        """
+        Returns True if lower limit is set.
+        """
         return self.lower_limit is not None
 
     @property
     def is_array(self) -> bool:
+        """
+        Returns True if element is an array.
+        """
         return self.array_len is not None
 
     @property
     def typeref(self) -> "int | str | DataType | None":
+        """
+        Type reference value (type ID, type name, or DataType instance).
+        """
         return self._typeref
 
     @property
     def has_scalar_type_code(self) -> bool:
+        """
+        Returns True if element has a scalar type code.
+        """
         return self.type_code not in [apx_base.TypeCode.NONE,
                                       apx_base.TypeCode.RECORD,
                                       apx_base.TypeCode.TYPE_REF_ID,
@@ -192,6 +237,9 @@ class DataElement:
 
     @property
     def has_string_type_code(self) -> bool:
+        """
+        Returns True if element has a character or string type code.
+        """
         return self.type_code in [apx_base.TypeCode.CHAR,
                                   apx_base.TypeCode.CHAR8,
                                   apx_base.TypeCode.CHAR16,
@@ -210,15 +258,24 @@ class DataElement:
         self._typeref = value
 
     def set_limits(self, lower_limit: int, upper_limit: int) -> None:
+        """
+        Sets both lower and upper limits.
+        """
         if lower_limit is None or upper_limit is None:
             raise ValueError("A 'None' Argument is not allowed")
         self.lower_limit = lower_limit
         self.upper_limit = upper_limit
 
     def get_limits(self) -> tuple[int | None, int | None]:
+        """
+        Returns a tuple of (lower_limit, upper_limit).
+        """
         return self.lower_limit, self.upper_limit
 
     def append(self, child_element: 'DataElement') -> None:
+        """
+        Appends a child DataElement to a record element.
+        """
         assert self.elements is not None
         self.elements.append(child_element)
 
@@ -296,6 +353,9 @@ class DataElement:
             return apx_base.NO_ERROR, effective_element
 
     def derive_proper_init_value(self, parsed_init_value: Any) -> tuple[apx_base.Result, Any]:
+        """
+        Derives and validates the proper initial value from the parsed initial value.
+        """
         type_code = self.type_code
         # This should only be used on effective data elements. No references allowed
         assert type_code not in [
@@ -382,10 +442,16 @@ class DataElement:
     def _derive_string_init_value(self, parsed_init_value: Any) -> tuple[apx_base.Result, Any]:
         if isinstance(parsed_init_value, str):
             if self.type_code == apx_base.TypeCode.CHAR:
-                # TODO: verify ascii-characaters
+                try:
+                    parsed_init_value.encode('ascii')
+                except UnicodeEncodeError:
+                    return apx_base.INIT_VALUE_ERROR, None
                 return apx_base.NO_ERROR, parsed_init_value
             if self.type_code == apx_base.TypeCode.CHAR8:
-                # TODO: verify utf8-characaters
+                try:
+                    parsed_init_value.encode('utf-8')
+                except UnicodeEncodeError:
+                    return apx_base.INIT_VALUE_ERROR, None
                 return apx_base.NO_ERROR, parsed_init_value
             if self.type_code == apx_base.TypeCode.CHAR16:
                 return apx_base.NOT_IMPLEMENTED_ERROR, None
@@ -418,17 +484,26 @@ class DataElement:
 
 
 class DataSignature:
+    """
+    APX Data Signature representation.
+    """
     def __init__(self) -> None:
         self.element: 'DataElement | None' = None
         self.effective_element: 'DataElement | None' = None
 
     def follow_type_references(self, data_type_list: list['DataType'],
                                data_type_map: dict[str, 'DataType']) -> apx_base.Result:
+        """
+        Follows and resolves type references in the signature's data element.
+        """
         if self.element is None:
             return apx_base.NO_ERROR
         return self.element.follow_type_references(data_type_list, data_type_map)
 
     def create_effective_element(self) -> tuple[apx_base.Result, 'DataElement | None']:
+        """
+        Creates and stores the effective DataElement for this signature.
+        """
         if self.element is None:
             return apx_base.NULL_PTR_ERROR, None
         result, effective_element = self.element.create_effective_element()
@@ -437,6 +512,9 @@ class DataSignature:
         return result, effective_element
 
     def derive_proper_init_value(self, parsed_init_value: Any) -> tuple[apx_base.Result, Any]:
+        """
+        Derives the proper initial value for the signature's effective element.
+        """
         if self.effective_element is None:
             return apx_base.NULL_PTR_ERROR, None
         return self.effective_element.derive_proper_init_value(parsed_init_value)
@@ -446,6 +524,9 @@ class DataSignature:
 
 
 class DataType:
+    """
+    APX Data Type representation.
+    """
     def __init__(self, name: str, line_number: int | None = None) -> None:
         self.name: str = name
         self.line_number: int | None = line_number
@@ -455,6 +536,9 @@ class DataType:
 
     @property
     def attributes(self) -> 'TypeAttributes | None':
+        """
+        Type attributes.
+        """
         return self._attr
 
     @attributes.setter
@@ -465,10 +549,16 @@ class DataType:
 
     @property
     def has_attributes(self) -> bool:
+        """
+        Returns True if type has attributes.
+        """
         return self.attributes is not None
 
     @property
     def data_element(self) -> 'DataElement | None':
+        """
+        Root DataElement of the data type signature.
+        """
         return self.dsg.element
 
     @data_element.setter
@@ -478,9 +568,15 @@ class DataType:
 
     def follow_type_references(self, data_type_list: list['DataType'],
                                data_type_map: dict[str, 'DataType']) -> apx_base.Result:
+        """
+        Follows and resolves type references in the data type signature.
+        """
         return self.dsg.follow_type_references(data_type_list, data_type_map)
 
     def create_effective_element(self) -> tuple[apx_base.Result, 'DataElement | None']:
+        """
+        Creates the effective DataElement for the data type signature.
+        """
         return self.dsg.create_effective_element()
 
 
@@ -502,6 +598,9 @@ class Port:
 
     @property
     def attributes(self) -> 'PortAttributes | None':
+        """
+        Port attributes.
+        """
         return self._attr
 
     @attributes.setter
@@ -512,10 +611,16 @@ class Port:
 
     @property
     def has_attributes(self) -> bool:
+        """
+        Returns True if port has attributes.
+        """
         return self.attributes is not None
 
     @property
     def data_element(self) -> 'DataElement | None':
+        """
+        Root DataElement of the port signature.
+        """
         return self.dsg.element
 
     @data_element.setter
@@ -525,23 +630,38 @@ class Port:
 
     @property
     def queue_len(self) -> int:
+        """
+        Queue length if port is queued, otherwise 0.
+        """
         if self.attributes is not None:
             return self.attributes.queue_length
         return 0
 
     @property
     def effective_element(self) -> 'DataElement | None':
+        """
+        Effective DataElement of the port signature.
+        """
         return self.dsg.effective_element
 
     def follow_type_references(self, data_type_list: list['DataType'],
                                data_type_map: dict[str, 'DataType']) -> apx_base.Result:
+        """
+        Follows and resolves type references in the port signature.
+        """
         return self.dsg.follow_type_references(data_type_list, data_type_map)
 
     def create_effective_element(self) -> apx_base.Result:
+        """
+        Creates the effective element for the port signature.
+        """
         result, _unused = self.dsg.create_effective_element()
         return result
 
     def derive_proper_init_value(self) -> apx_base.Result:
+        """
+        Derives and sets the proper initial value for the port from its attributes.
+        """
         if self.attributes is not None:
             if self.attributes.has_init_value:
                 result, proper_init_value = self.dsg.derive_proper_init_value(self.attributes.init_value)
@@ -603,6 +723,9 @@ class Node:
             raise ValueError("Unsupported argument type: " + str(type(item)))
 
     def add_data_type(self, data_type: 'DataType') -> 'DataType':
+        """
+        Adds a DataType to the node.
+        """
         if data_type.name not in self.data_type_map:
             self.data_types.append(data_type)
             self.data_type_map[data_type.name] = data_type
@@ -611,6 +734,9 @@ class Node:
         return data_type
 
     def add_require_port(self, port: 'RequirePort') -> 'RequirePort':
+        """
+        Adds a RequirePort to the node.
+        """
         if port.name not in self.port_map:
             self.port_map[port.name] = port
             self.require_ports.append(port)
@@ -619,6 +745,9 @@ class Node:
         return port
 
     def add_provide_port(self, port: 'ProvidePort') -> 'ProvidePort':
+        """
+        Adds a ProvidePort to the node.
+        """
         if port.name not in self.port_map:
             self.port_map[port.name] = port
             self.provide_ports.append(port)
@@ -627,6 +756,10 @@ class Node:
         return port
 
     def finalize(self) -> apx_base.Result:
+        """
+        Finalizes the node by resolving type references, creating effective elements,
+        and deriving initial values.
+        """
         if self.is_finalized:
             return apx_base.NO_ERROR
         result = self._follow_type_references_on_ports(self.provide_ports + self.require_ports)

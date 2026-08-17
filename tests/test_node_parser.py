@@ -685,6 +685,37 @@ R"Signal"T[0][2]:={{0xFF, 0xFF, 0xFF}, {0, 0, 0}}
         expected_init = [{"Red": 255, "Green": 255, "Blue": 255}, {"Red": 0, "Green": 0, "Blue": 0}]
         self.assertEqual(port.proper_init_value, expected_init)
 
+    def test_derive_proper_init_value_char_array(self):
+        apx_text = """APX/1.3
+N"TestNode"
+R"Signal"a[10]:="hello"
+"""
+        parser = NodeParser()
+        node = parser.loads(apx_text)
+        self.assertEqual(parser.result, apx_base.Result.NO_ERROR)
+        port = node.require_ports[0]
+        self.assertEqual(port.proper_init_value, "hello")
+
+    def test_derive_proper_init_value_char_array_invalid_ascii(self):
+        apx_text = """APX/1.3
+N"TestNode"
+R"Signal"a[10]:="café"
+"""
+        parser = NodeParser()
+        parser.loads(apx_text)
+        self.assertEqual(parser.result, apx_base.Result.INIT_VALUE_ERROR)
+
+    def test_derive_proper_init_value_char8_array(self):
+        apx_text = """APX/1.3
+N"TestNode"
+R"Signal"A[10]:="café"
+"""
+        parser = NodeParser()
+        node = parser.loads(apx_text)
+        self.assertEqual(parser.result, apx_base.Result.NO_ERROR)
+        port = node.require_ports[0]
+        self.assertEqual(port.proper_init_value, "café")
+
     def test_effective_element_uint8(self):
         apx_text = """APX/1.3
 N"TestNode"

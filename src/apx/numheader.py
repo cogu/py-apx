@@ -1,12 +1,17 @@
+"""
+Functions for encoding and decoding APX NumHeader (NumHeader16 and NumHeader32).
+"""
+
+
 def _decode(data: bytes | bytearray, mode: int = 16, offset: int = 0,
             end: int | None = None) -> tuple[int, int | None]:
     """
     Decodes numheader from data (which is byte or bytearray).
     Mode can be either 16 or 32 (number of bits parsed when long_bit is 1)
 
-    Returns tuple (bytesParsed, value)
+    Returns tuple (bytes_parsed, value)
     """
-    bytesParsed = 0
+    bytes_parsed = 0
     value = None
     if end is None:
         end = len(data)
@@ -17,23 +22,23 @@ def _decode(data: bytes | bytearray, mode: int = 16, offset: int = 0,
             # MSB is set, parse next 1 or 3 bytes depending on mode
             if mode == 16:  # NumHeader16
                 if offset + 2 <= end:
-                    bytesParsed = 2
+                    bytes_parsed = 2
                     b2 = data[offset + 1]
-                    value = (b1 << 8 | b2)
+                    value = (b1 << 8) | b2
                     # range(0,128) with MSB set to 1 shall be interpreted as 32768..32895
                     if value < 128:
                         value += 32768
             elif mode == 32:  # NumHeader32
                 if offset + 4 <= end:
-                    bytesParsed = 4
+                    bytes_parsed = 4
                     b2, b3, b4 = data[offset + 1:offset + 4]
                     value = (b1 << 24) | (b2 << 16) | (b3 << 8) | b4
             else:
                 raise ValueError('invalid mode argument: ' + str(mode))
         else:
-            bytesParsed = 1
+            bytes_parsed = 1
             value = b1
-    return (bytesParsed, value)
+    return (bytes_parsed, value)
 
 
 def decode16(data: bytes | bytearray, offset: int = 0,
@@ -41,7 +46,7 @@ def decode16(data: bytes | bytearray, offset: int = 0,
     """
     Decodes NumHeader16 value from bytearray
 
-    Returns tuple (bytesParsed, value)
+    Returns tuple (bytes_parsed, value)
     """
     return _decode(data, 16, offset, end)
 
@@ -51,7 +56,7 @@ def decode32(data: bytes | bytearray, offset: int = 0,
     """
     Decodes NumHeader32 value from bytearray
 
-    Returns tuple (bytesParsed, value)
+    Returns tuple (bytes_parsed, value)
     """
     return _decode(data, 32, offset, end)
 

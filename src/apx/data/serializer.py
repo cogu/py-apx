@@ -50,6 +50,9 @@ class WriteBuffer:
         return self.end_pos - self.write_pos
 
     def write_bytes(self, data: bytes | bytearray) -> apx_base.Result:
+        """
+        Writes data bytes into the buffer.
+        """
         size = len(data)
         if size > self.remain:
             return apx_base.Result.BUFFER_BOUNDARY_ERROR
@@ -112,37 +115,55 @@ class SerializerState:
 
     @property
     def is_scalar_type_code(self) -> bool:
-
+        """
+        Returns True if type_code is a scalar type.
+        """
         type_code = self.type_code.value
-        if type_code >= apx_base.TypeCode.UINT8.value and type_code <= apx_base.TypeCode.INT64.value:
+        if apx_base.TypeCode.UINT8.value <= type_code <= apx_base.TypeCode.INT64.value:
             return True
         return self.type_code == apx_base.TypeCode.BOOL
 
     @property
     def is_string_type_code(self) -> bool:
+        """
+        Returns True if type_code is a string type.
+        """
         type_code = self.type_code.value
-        if type_code >= apx_base.TypeCode.CHAR.value and type_code <= apx_base.TypeCode.CHAR32.value:
-            return True
-        return False
+        return apx_base.TypeCode.CHAR.value <= type_code <= apx_base.TypeCode.CHAR32.value
 
     @property
     def is_byte_type_code(self) -> bool:
+        """
+        Returns True if type_code is BYTE.
+        """
         return self.type_code == apx_base.TypeCode.BYTE
 
     @property
     def is_record_type_code(self) -> bool:
+        """
+        Returns True if type_code is RECORD.
+        """
         return self.type_code == apx_base.TypeCode.RECORD
 
     @property
     def is_scalar_value(self) -> bool:
+        """
+        Returns True if value is a scalar.
+        """
         return isinstance(self.value, (int, str, bytes, bool))
 
     @property
     def is_str_value(self) -> bool:
+        """
+        Returns True if value is a string.
+        """
         return isinstance(self.value, str)
 
     @property
     def is_byte_like_value(self) -> bool:
+        """
+        Returns True if value is bytes or bytearray.
+        """
         return isinstance(self.value, (bytes, bytearray))
 
     def prepare_for_array(self,
@@ -181,6 +202,9 @@ class SerializerState:
         return apx_base.Result.NO_ERROR
 
     def write_value(self) -> apx_base.Result:
+        """
+        Writes current state value to the buffer.
+        """
         if self.dynamic_size_type is not None:
             result = self._write_dynamic_value_to_buffer(self.array_len, self.dynamic_size_type)
             if result != apx_base.Result.NO_ERROR:
@@ -197,6 +221,9 @@ class SerializerState:
         return apx_base.Result.NOT_IMPLEMENTED_ERROR
 
     def write_scalar_value(self) -> apx_base.Result:
+        """
+        Writes scalar value to the buffer.
+        """
         range_checker = self.range_checkers.get(self.type_code, None)
         if range_checker is not None:
             result = range_checker()
@@ -212,7 +239,7 @@ class SerializerState:
             return apx_base.Result.NOT_IMPLEMENTED_ERROR
         return apx_base.Result.NO_ERROR
 
-    def record_select(self, key: str, is_first_field: bool = True) -> tuple[apx_base.Result, Any]:
+    def record_select(self, key: str) -> tuple[apx_base.Result, Any]:
         """
         Selects record field from value
         """
@@ -225,6 +252,9 @@ class SerializerState:
         return apx_base.Result.NO_ERROR, value
 
     def write_array_of_scalar_values(self) -> apx_base.Result:
+        """
+        Writes array of scalar values to the buffer.
+        """
         if not isinstance(self.value, list):
             return apx_base.Result.VALUE_TYPE_ERROR
         if self.dynamic_size_type is None and len(self.value) != self.array_len:
@@ -354,6 +384,9 @@ class Serializer:
         self.state.buffer = self.write_buffer
 
     def bytes_written(self) -> int:
+        """
+        Returns the number of bytes written to the buffer.
+        """
         if (self.state.buffer is None) or (not self.state.buffer.is_valid):
             return -1
         return self.state.buffer.write_pos
@@ -375,6 +408,9 @@ class Serializer:
                    array_len: int = 0,
                    dynamic_size_type: apx_base.SizeType | None = None
                    ) -> apx_base.Result:
+        """
+        Packs uint8 value(s) into buffer.
+        """
         self.state.type_code = apx_base.TypeCode.UINT8
         self.state.element_size = apx_base.UINT8_SIZE
         return self._pack_value(array_len, dynamic_size_type)
@@ -383,6 +419,9 @@ class Serializer:
                     array_len: int = 0,
                     dynamic_size_type: apx_base.SizeType | None = None
                     ) -> apx_base.Result:
+        """
+        Packs uint16 value(s) into buffer.
+        """
         self.state.type_code = apx_base.TypeCode.UINT16
         self.state.element_size = apx_base.UINT16_SIZE
         return self._pack_value(array_len, dynamic_size_type)
@@ -391,6 +430,9 @@ class Serializer:
                     array_len: int = 0,
                     dynamic_size_type: apx_base.SizeType | None = None
                     ) -> apx_base.Result:
+        """
+        Packs uint32 value(s) into buffer.
+        """
         self.state.type_code = apx_base.TypeCode.UINT32
         self.state.element_size = apx_base.UINT32_SIZE
         return self._pack_value(array_len, dynamic_size_type)
@@ -399,6 +441,9 @@ class Serializer:
                     array_len: int = 0,
                     dynamic_size_type: apx_base.SizeType | None = None
                     ) -> apx_base.Result:
+        """
+        Packs uint64 value(s) into buffer.
+        """
         self.state.type_code = apx_base.TypeCode.UINT64
         self.state.element_size = apx_base.UINT64_SIZE
         return self._pack_value(array_len, dynamic_size_type)
@@ -407,6 +452,9 @@ class Serializer:
                   array_len: int = 0,
                   dynamic_size_type: apx_base.SizeType | None = None
                   ) -> apx_base.Result:
+        """
+        Packs int8 value(s) into buffer.
+        """
         self.state.type_code = apx_base.TypeCode.INT8
         self.state.element_size = apx_base.INT8_SIZE
         return self._pack_value(array_len, dynamic_size_type)
@@ -415,6 +463,9 @@ class Serializer:
                    array_len: int = 0,
                    dynamic_size_type: apx_base.SizeType | None = None
                    ) -> apx_base.Result:
+        """
+        Packs int16 value(s) into buffer.
+        """
         self.state.type_code = apx_base.TypeCode.INT16
         self.state.element_size = apx_base.INT16_SIZE
         return self._pack_value(array_len, dynamic_size_type)
@@ -423,6 +474,9 @@ class Serializer:
                    array_len: int = 0,
                    dynamic_size_type: apx_base.SizeType | None = None
                    ) -> apx_base.Result:
+        """
+        Packs int32 value(s) into buffer.
+        """
         self.state.type_code = apx_base.TypeCode.INT32
         self.state.element_size = apx_base.INT32_SIZE
         return self._pack_value(array_len, dynamic_size_type)
@@ -431,6 +485,9 @@ class Serializer:
                    array_len: int = 0,
                    dynamic_size_type: apx_base.SizeType | None = None
                    ) -> apx_base.Result:
+        """
+        Packs int64 value(s) into buffer.
+        """
         self.state.type_code = apx_base.TypeCode.INT64
         self.state.element_size = apx_base.INT64_SIZE
         return self._pack_value(array_len, dynamic_size_type)
@@ -439,6 +496,9 @@ class Serializer:
                   array_len: int = 0,
                   dynamic_size_type: apx_base.SizeType | None = None
                   ) -> apx_base.Result:
+        """
+        Packs char value(s) into buffer.
+        """
         self.state.type_code = apx_base.TypeCode.CHAR
         self.state.element_size = apx_base.CHAR_SIZE
         return self._pack_value(array_len, dynamic_size_type)
@@ -447,6 +507,9 @@ class Serializer:
                    array_len: int = 0,
                    dynamic_size_type: apx_base.SizeType | None = None
                    ) -> apx_base.Result:
+        """
+        Packs char8 value(s) into buffer.
+        """
         self.state.type_code = apx_base.TypeCode.CHAR8
         self.state.element_size = apx_base.CHAR8_SIZE
         return self._pack_value(array_len, dynamic_size_type)
@@ -455,6 +518,9 @@ class Serializer:
                   array_len: int = 0,
                   dynamic_size_type: apx_base.SizeType | None = None
                   ) -> apx_base.Result:
+        """
+        Packs bool value(s) into buffer.
+        """
         self.state.type_code = apx_base.TypeCode.BOOL
         self.state.element_size = apx_base.BOOL_SIZE
         return self._pack_value(array_len, dynamic_size_type)
@@ -463,6 +529,9 @@ class Serializer:
                   array_len: int = 0,
                   dynamic_size_type: apx_base.SizeType | None = None
                   ) -> apx_base.Result:
+        """
+        Packs byte value(s) into buffer.
+        """
         self.state.type_code = apx_base.TypeCode.BYTE
         self.state.element_size = apx_base.BYTE_SIZE
         return self._pack_value(array_len, dynamic_size_type)
@@ -472,6 +541,9 @@ class Serializer:
                     array_len: int = 0,
                     dynamic_size_type: apx_base.SizeType | None = None
                     ) -> apx_base.Result:
+        """
+        Prepares to pack a record into buffer.
+        """
         self.state.type_code = apx_base.TypeCode.RECORD
         self.state.element_size = 0
         if self.state.buffer is None:
@@ -516,7 +588,7 @@ class Serializer:
         """
         if not is_first_field:
             self._pop_state()
-        result, child_value = self.state.record_select(name, is_first_field)
+        result, child_value = self.state.record_select(name)
         if result != apx_base.Result.NO_ERROR:
             return result
         self._enter_child_state()

@@ -1,3 +1,6 @@
+"""
+APX byte code compiler for pack and unpack programs
+"""
 import apx.base as apx_base
 import apx.vm.base
 import apx.vm.program
@@ -5,6 +8,9 @@ import apx.model as apx_model
 
 
 class Compiler:
+    """
+    Compiles port and data element definitions into APX VM bytecode programs.
+    """
 
     def __init__(self) -> None:
         self.is_pack_prog: bool = False
@@ -13,6 +19,9 @@ class Compiler:
 
     def compile_port(self, port: apx_model.Port,
                      program_type: apx.vm.base.ProgramType) -> tuple[apx_base.Result, bytes | None]:
+        """
+        Compiles a port into an APX bytecode program.
+        """
         data_element = port.effective_element
         if data_element is None:
             return apx_base.NULL_PTR_ERROR, None
@@ -27,6 +36,9 @@ class Compiler:
 
     def compile_data_element(self, program_type: apx.vm.base.ProgramType,
                              data_element: apx_model.DataElement) -> tuple[apx_base.Result, int]:
+        """
+        Compiles a data element into bytecode instructions.
+        """
         elem_size: int | None = None
         is_array = data_element.is_array
         type_code = data_element.type_code
@@ -52,6 +64,9 @@ class Compiler:
     def compile_pack_unpack_record_data_element(
             self, program_type: apx.vm.base.ProgramType,
             data_element: apx_model.DataElement) -> tuple[apx_base.Result, int | None]:
+        """
+        Compiles pack/unpack instructions for a record data element.
+        """
         retval = apx_base.NO_ERROR
         elem_size: int | None = None
         is_array = data_element.is_array
@@ -76,11 +91,14 @@ class Compiler:
 
     def compile_record_fields(self, program_type: apx.vm.base.ProgramType,
                               data_element: apx_model.DataElement) -> tuple[apx_base.Result, int]:
+        """
+        Compiles child elements of a record structure.
+        """
         record_size = 0
         assert data_element.type_code == apx_base.TypeCode.RECORD
         assert data_element.elements is not None
         for i, child_element in enumerate(data_element.elements):
-            rc = self.compile_record_select_instruction(child_element, is_first_field=(i == 0))
+            rc = self.compile_record_select_instruction(child_element, is_first_field=i == 0)
             if rc != apx_base.NO_ERROR:
                 return rc, 0
             rc, child_elem_size = self.compile_data_element(program_type, child_element)
@@ -97,7 +115,9 @@ class Compiler:
     def compile_record_select_instruction(
         self, data_element: apx_model.DataElement, is_first_field: bool
     ) -> apx_base.Result:
-
+        """
+        Compiles a RECORD_SELECT instruction for selecting a named field.
+        """
         name = data_element.name
         if name is None or len(name) == 0:
             return apx_base.NAME_MISSING_ERROR
@@ -105,10 +125,16 @@ class Compiler:
         return self.program.encode_field_name(name)
 
     def compile_record_end_instruction(self) -> apx_base.Result:
+        """
+        Compiles a RECORD_END instruction.
+        """
         return self.program.encode_instruction(
             apx.vm.base.OpCode.DATA_CTRL, apx.vm.base.Variant.RECORD_END, False)
 
     def compile_array_next_instruction(self) -> apx_base.Result:
+        """
+        Compiles an ARRAY_NEXT flow control instruction.
+        """
         return self.program.encode_instruction(
             apx.vm.base.OpCode.FLOW_CTRL, apx.vm.base.Variant.ARRAY_NEXT, False)
 
@@ -117,6 +143,9 @@ class Compiler:
         program_type: apx.vm.base.ProgramType,
         data_element: apx_model.DataElement
     ) -> tuple[apx_base.Result, int]:
+        """
+        Compiles pack/unpack instructions for a primitive data element.
+        """
         retval = apx_base.NO_ERROR
         elem_size: int | None = None
         data_variant: apx.vm.base.Variant | None = None
@@ -207,9 +236,15 @@ class Compiler:
 
     def compile_data_instruction(self, opcode: apx.vm.base.OpCode,
                                  data_variant: apx.vm.base.Variant, is_array: bool) -> None:
+        """
+        Encodes a pack/unpack data instruction into the program buffer.
+        """
         self.program.encode_instruction(opcode, data_variant, is_array)
 
     def compile_array_size_instruction(self, array_len: int, is_dynamic_array: bool) -> apx_base.Result:
+        """
+        Encodes an array size instruction into the program buffer.
+        """
         retval = self.program.encode_array_size(array_len, is_dynamic_array)
         if retval == apx_base.NO_ERROR and is_dynamic_array:
             self.is_dynamic = True
@@ -218,6 +253,9 @@ class Compiler:
     def compile_limit_check_instruction(self, data_element: apx_model.DataElement,
                                         limit_check_variant: apx.vm.base.Variant,
                                         is_array: bool) -> apx_base.Result:
+        """
+        Encodes a limit check instruction into the program buffer.
+        """
         lower_limit, upper_limit = data_element.get_limits()
         assert lower_limit is not None and upper_limit is not None
         return self.program.encode_limit_check_instruction(

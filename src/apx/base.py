@@ -248,23 +248,33 @@ NO_VALUE_ERROR = Result.NO_VALUE_ERROR
 # Exceptions
 
 class DataTypeAlreadyExists(RuntimeError):
-    pass
+    """
+    Exception raised when a data type already exists in the node.
+    """
 
 
 class PortAlreadyExists(RuntimeError):
-    pass
+    """
+    Exception raised when a port already exists in the node.
+    """
 
 
 class ParseError(RuntimeError):
-    pass
+    """
+    Exception raised when a parsing error occurs.
+    """
 
 
 class ValueTypeError(ValueError):
-    pass
+    """
+    Exception raised when an invalid value type is encountered.
+    """
 
 
 class ValueRangeError(ValueError):
-    pass
+    """
+    Exception raised when a value falls outside the valid range.
+    """
 
 
 # The purpose for below classes are for making the end user API easy to use.
@@ -337,6 +347,9 @@ class Node:
             raise ValueError("Unsupported argument type: " + str(type(item)))
 
     def add_data_type(self, data_type: DataType) -> DataType:
+        """
+        Adds a DataType to the node.
+        """
         if data_type.name not in self.data_type_map:
             self.data_types.append(data_type)
             self.data_type_map[data_type.name] = data_type
@@ -345,6 +358,9 @@ class Node:
         return data_type
 
     def add_require_port(self, port: RequirePort) -> RequirePort:
+        """
+        Adds a RequirePort to the node.
+        """
         if port.name not in self.port_map:
             self.port_map[port.name] = port
             self.require_ports.append(port)
@@ -353,6 +369,9 @@ class Node:
         return port
 
     def add_provide_port(self, port: ProvidePort) -> ProvidePort:
+        """
+        Adds a ProvidePort to the node.
+        """
         if port.name not in self.port_map:
             self.port_map[port.name] = port
             self.provide_ports.append(port)

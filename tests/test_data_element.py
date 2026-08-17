@@ -64,6 +64,27 @@ class TestDataElements(unittest.TestCase):
         self.assertEqual(result, apx_base.NO_ERROR)
         self.assertEqual(derived_init_value, "init")
 
+    def test_derive_proper_init_value_char_array_invalid_ascii(self):
+        data_element = apx_model.DataElement(apx_base.TypeCode.CHAR)
+        data_element.array_len = 3
+        result, derived_init_value = data_element.derive_proper_init_value("café")
+        self.assertEqual(result, apx_base.INIT_VALUE_ERROR)
+        self.assertIsNone(derived_init_value)
+
+    def test_derive_proper_init_value_char8_array_valid_utf8(self):
+        data_element = apx_model.DataElement(apx_base.TypeCode.CHAR8)
+        data_element.array_len = 3
+        result, derived_init_value = data_element.derive_proper_init_value("café")
+        self.assertEqual(result, apx_base.NO_ERROR)
+        self.assertEqual(derived_init_value, "café")
+
+    def test_derive_proper_init_value_char8_array_invalid_utf8(self):
+        data_element = apx_model.DataElement(apx_base.TypeCode.CHAR8)
+        data_element.array_len = 3
+        result, derived_init_value = data_element.derive_proper_init_value("\ud800")
+        self.assertEqual(result, apx_base.INIT_VALUE_ERROR)
+        self.assertIsNone(derived_init_value)
+
 
 if __name__ == '__main__':
     unittest.main()
