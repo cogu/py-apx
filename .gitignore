@@ -1,21 +1,18 @@
 # Virtual Environment
-*.venv
+.venv
 # VS CODE
 .vscode
 
 # Compiled python modules.
 *.pyc
-__pycache__/
+**/__pycache__/
 
 # Setuptools distribution folder.
 /dist/
 /build/
 
-# Python egg metadata, regenerated from source files by setuptools.
+# Python egg metadata.
 /*.egg-info
 
 #sphinx-doc files
 /doc/_build/
-
-examples/generator/derived*
-examples/doctest

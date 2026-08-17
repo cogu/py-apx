@@ -1,0 +1,139 @@
+from enum import Enum
+from collections import namedtuple
+
+#      APX VM 2.1 Instruction Format
+#      +-------------+---------------+----------------+
+#      | 1 fLag bit  | 3 opcode bits | 4 variant bits |
+#      +-------------+---------------+----------------+
+
+
+class ProgramType(Enum):
+    PACK = 0
+    UNPACK = 1
+
+
+class OpCode(Enum):
+    PACK = 0
+    UNPACK = 1
+    DATA_SIZE = 2
+    DATA_CTRL = 3
+    FLOW_CTRL = 4
+
+
+class Variant(Enum):
+    # OPCODE PACK/UNPACK
+    UINT8 = 0
+    UINT16 = 1
+    UINT32 = 2
+    UINT64 = 3
+    INT8 = 4
+    INT16 = 5
+    INT32 = 6
+    INT64 = 7
+    BOOL = 8
+    BYTE = 9
+    RECORD = 10
+    ARRAY = 11  # RESERVED FOR FUTURE USE
+    CHAR = 12
+    CHAR8 = 13
+    CHAR16 = 14
+    CHAR32 = 15
+    TYPE_CODE_LAST = 15
+    # OPCODE DATA_SIZE
+    ARRAY_SIZE_UINT8 = 0
+    ARRAY_SIZE_UINT16 = 1
+    ARRAY_SIZE_UINT32 = 2
+    ARRAY_SIZE_LAST = 2
+    ELEMENT_SIZE_U8_QUEUE_SIZE_UINT8 = 3
+    ELEMENT_SIZE_U8_QUEUE_SIZE_UINT16 = 4
+    ELEMENT_SIZE_U8_QUEUE_SIZE_UINT32 = 5
+    ELEMENT_SIZE_U16_QUEUE_SIZE_UINT8 = 6
+    ELEMENT_SIZE_U16_QUEUE_SIZE_UINT16 = 7
+    ELEMENT_SIZE_U16_QUEUE_SIZE_UINT32 = 8
+    ELEMENT_SIZE_U32_QUEUE_SIZE_UINT8 = 9
+    ELEMENT_SIZE_U32_QUEUE_SIZE_UINT16 = 10
+    ELEMENT_SIZE_U32_QUEUE_SIZE_UINT32 = 11
+    ELEMENT_SIZE_LAST = 11
+    # OPCODE DATA_CTRL
+    RECORD_SELECT = 0
+    LIMIT_CHECK_NONE = 0  # OVERLAYS WITH RECORD_SELECT
+    RECORD_END = 1
+    LIMIT_CHECK_UINT8 = 2
+    LIMIT_CHECK_UINT16 = 3
+    LIMIT_CHECK_UINT32 = 4
+    LIMIT_CHECK_UINT64 = 5
+    LIMIT_CHECK_INT8 = 6
+    LIMIT_CHECK_INT16 = 7
+    LIMIT_CHECK_INT32 = 8
+    LIMIT_CHECK_INT64 = 9
+    LIMIT_CHECK_BOOL = 10
+    LIMIT_CHECK_LAST = 10
+    # OPCODE FLOW_CTRL
+    ARRAY_NEXT = 0
+    FLOW_CTRL_LAST = 0
+
+
+class SizeType(Enum):
+    NONE = 0
+    UINT8 = 1
+    UINT16 = 2
+    UINT32 = 3
+    UNSUPPORTED = 4
+
+
+UINT8_MAX = 255
+UINT16_MAX = 65535
+UINT32_MAX = 4294967295
+UINT8_SIZE = 1
+UINT16_SIZE = 2
+UINT32_SIZE = 4
+UINT64_SIZE = 8
+INT8_SIZE = 1
+INT16_SIZE = 2
+INT32_SIZE = 4
+INT64_SIZE = 8
+CHAR_SIZE = 1
+CHAR8_SIZE = 1
+CHAR16_SIZE = 2
+CHAR32_SIZE = 2
+BYTE_SIZE = 1
+INSTR_SIZE = 1
+
+INSTR_OPCODE_MASK = 0x07
+INSTR_OPCODE_SHIFT = 0x04
+INSTR_VARIANT_MASK = 0x0f
+INSTR_FLAG = 0x80
+HEADER_DATA_SIZE_VARIANT_MASK = 0x7
+HEADER_FLAG_PACK_PROG = 0x08
+HEADER_FLAG_DYNAMIC_DATA = 0x10
+HEADER_FLAG_QUEUED_DATA = 0x20
+
+MAJOR_VERSION = 0x32
+MINOR_VERSION = 0x31
+
+
+class OperationType(Enum):
+
+    UNPACK = 0
+    PACK = 1
+    LIMIT_CHECK_UINT8 = 2
+    LIMIT_CHECK_UINT16 = 3
+    LIMIT_CHECK_UINT32 = 4
+    LIMIT_CHECK_UINT64 = 5
+    LIMIT_CHECK_INT8 = 6
+    LIMIT_CHECK_INT16 = 7
+    LIMIT_CHECK_INT32 = 8
+    LIMIT_CHECK_INT64 = 9
+    RECORD_SELECT = 10
+    ARRAY_NEXT = 11
+    PROGRAM_END = 12
+
+
+PackUnpackOperationInfo = namedtuple('PackUnpackOperationInfo', ['type_code', 'array_length', 'is_dynamic_array'])
+RangeCheckOperationInfo = namedtuple('PackUnpackOperationInfo', ['lower_limit', 'upper_limit'])
+
+OPCODE_PACK = OpCode.PACK.value << INSTR_OPCODE_SHIFT
+OPCODE_UNPACK = OpCode.UNPACK.value << INSTR_OPCODE_SHIFT
+OPCODE_DATA_SIZE = OpCode.DATA_SIZE.value << INSTR_OPCODE_SHIFT
+OPCODE_DATA_CTRL = OpCode.DATA_CTRL.value << INSTR_OPCODE_SHIFT
+OPCODE_FLOW_CTRL = OpCode.FLOW_CTRL.value << INSTR_OPCODE_SHIFT
