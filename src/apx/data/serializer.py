@@ -33,7 +33,7 @@ class WriteBuffer:
         self.data = data
         self.write_pos = 0
         self.end_pos = len(data)
-        self.padded_write_pos = 0
+        self.padded_write_pos: int | None = None
 
     @property
     def is_valid(self) -> bool:
@@ -189,6 +189,19 @@ class SerializerState:
                 return apx_base.Result.BUFFER_BOUNDARY_ERROR
         return apx_base.Result.NO_ERROR
 
+    def prepare_for_buffer_write(self) -> apx_base.Result:
+        """
+        Performs actions that depend on outcome of previous write instructions
+        """
+        if (self.buffer is None) or (not self.buffer.is_valid):
+            return apx_base.Result.MISSING_BUFFER_ERROR
+        if self.buffer.padded_write_pos is not None:
+            if (self.buffer.padded_write_pos < 0) or (self.buffer.padded_write_pos > self.buffer.end_pos):
+                return apx_base.Result.BUFFER_BOUNDARY_ERROR
+            self.buffer.write_pos = self.buffer.padded_write_pos
+            self.buffer.padded_write_pos = None
+        return apx_base.Result.NO_ERROR
+
     def check_value_in_range(self, lower_limit: int, upper_limit: int) -> apx_base.Result:
         """
         Checks if current value is in within the upper and lower limit
@@ -209,11 +222,11 @@ class SerializerState:
             result = self._write_dynamic_value_to_buffer(self.array_len, self.dynamic_size_type)
             if result != apx_base.Result.NO_ERROR:
                 return result
+
         if self.is_scalar_type_code:
-            if self.array_len == 0:
+            if self.dynamic_size_type is None and self.array_len == 0:
                 return self.write_scalar_value()
-            else:
-                return self.write_array_of_scalar_values()
+            return self.write_array_of_scalar_values()
         elif self.is_string_type_code:
             return self._write_string()
         elif self.is_byte_type_code:
@@ -383,6 +396,12 @@ class Serializer:
         self.write_buffer = WriteBuffer(buffer)
         self.state.buffer = self.write_buffer
 
+    def prepare_for_buffer_write(self) -> apx_base.Result:
+        """
+        Prepares buffer for write
+        """
+        return self.state.prepare_for_buffer_write()
+
     def bytes_written(self) -> int:
         """
         Returns the number of bytes written to the buffer.
@@ -537,13 +556,15 @@ class Serializer:
         return self._pack_value(array_len, dynamic_size_type)
 
     def pack_record(self,
-
                     array_len: int = 0,
                     dynamic_size_type: apx_base.SizeType | None = None
                     ) -> apx_base.Result:
         """
         Prepares to pack a record into buffer.
         """
+        result = self.state.prepare_for_buffer_write()
+        if result != apx_base.Result.NO_ERROR:
+            return result
         self.state.type_code = apx_base.TypeCode.RECORD
         self.state.element_size = 0
         if self.state.buffer is None:
@@ -553,19 +574,16 @@ class Serializer:
         if array_len > 0:
             if not isinstance(self.state.value, list):
                 return apx_base.Result.VALUE_TYPE_ERROR
-            if dynamic_size_type is None:
-                if len(self.state.value) != array_len:
-                    return apx_base.Result.VALUE_LENGTH_ERROR
+            if dynamic_size_type is None and len(self.state.value) != array_len:
+                return apx_base.Result.VALUE_LENGTH_ERROR
             self.state.array_len = array_len
             self.state.array_index = 0
-            if len(self.state.value) == 0:
-                return apx_base.Result.NO_ERROR
-            child_value = self.state.value[0]
-            self._enter_child_state()
-            self.state.value = child_value
-        else:
-            if not isinstance(self.state.value, dict):
-                return apx_base.Result.VALUE_TYPE_ERROR
+            if len(self.state.value) > 0:
+                child_value = self.state.value[0]
+                self._enter_child_state()
+                self.state.value = child_value
+        elif not isinstance(self.state.value, dict):
+            return apx_base.Result.VALUE_TYPE_ERROR
         return apx_base.Result.NO_ERROR
 
     def _pack_value(self,
@@ -576,6 +594,9 @@ class Serializer:
             return apx_base.Result.MISSING_BUFFER_ERROR
         if self.state.value is None:
             return apx_base.Result.NO_VALUE_ERROR
+        result = self.state.prepare_for_buffer_write()
+        if result != apx_base.Result.NO_ERROR:
+            return result
         if array_len > 0:
             result = self.state.prepare_for_array(array_len, dynamic_size_type)
             if result != apx_base.Result.NO_ERROR:

@@ -5,8 +5,7 @@ Unit tests for Data Serializer
 import os
 import sys
 import unittest
-sys.path.insert(0, os.path.abspath(
-    os.path.join(os.path.dirname(__file__), '../../src')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
 import apx.base as apx_base  # noqa E402
 from apx.data import Serializer  # noqa E402
 
@@ -760,3 +759,101 @@ class TestSerializerRecord(unittest.TestCase):
             0xD0, 0x07, 0x00,
             0xA0, 0x0F, 0x01,
         ]))
+
+    def test_pack_dynamic_string_in_record(self):
+        # DATA SIGNATURE: {"First"a[10*]"Second"a[10*]}
+        buffer = bytearray((1 + 10) * 2)
+        serializer = Serializer()
+        serializer.set_write_buffer(buffer)
+        serializer.set_value({
+            "First": "Hello",
+            "Second": "APX",
+        })
+        self.assertEqual(serializer.pack_record(), apx_base.Result.NO_ERROR)
+        self.assertEqual(serializer.record_select("First", True), apx_base.Result.NO_ERROR)
+        self.assertEqual(serializer.pack_char(10, apx_base.SizeType.UINT8), apx_base.Result.NO_ERROR)
+        self.assertEqual(serializer.record_select("Second", False), apx_base.Result.NO_ERROR)
+        self.assertEqual(serializer.pack_char(10, apx_base.SizeType.UINT8), apx_base.Result.NO_ERROR)
+        self.assertEqual(serializer.record_end(), apx_base.Result.NO_ERROR)
+        self.assertEqual(serializer.bytes_written(), 1 + 10 + 1 + 3)
+        self.assertEqual(buffer[0], 5)
+        self.assertEqual(buffer[1:6], bytearray(b"Hello"))
+        self.assertEqual(buffer[6:11], bytearray([0] * 5))
+        self.assertEqual(buffer[11], 3)
+        self.assertEqual(buffer[12:15], bytearray(b"APX"))
+        self.assertEqual(buffer[15:22], bytearray([0] * 7))
+
+    def test_pack_dynamic_uint16_array_in_record(self):
+        # DATA SIGNATURE: {"First"S[5*]"Second"C}
+        buffer = bytearray(1 + 2 * 5 + 1)
+        serializer = Serializer()
+        serializer.set_write_buffer(buffer)
+        serializer.set_value({
+            "First": [1000, 2000],
+            "Second": 255,
+        })
+        self.assertEqual(serializer.pack_record(), apx_base.Result.NO_ERROR)
+        self.assertEqual(serializer.record_select("First", True), apx_base.Result.NO_ERROR)
+        self.assertEqual(serializer.pack_uint16(5, apx_base.SizeType.UINT8), apx_base.Result.NO_ERROR)
+        self.assertEqual(serializer.record_select("Second", False), apx_base.Result.NO_ERROR)
+        self.assertEqual(serializer.pack_uint8(), apx_base.Result.NO_ERROR)
+        self.assertEqual(serializer.record_end(), apx_base.Result.NO_ERROR)
+        self.assertEqual(serializer.bytes_written(), len(buffer))
+        self.assertEqual(buffer[0], 2)
+        self.assertEqual(buffer[1:5], bytearray([0xE8, 0x03, 0xD0, 0x07]))
+        self.assertEqual(buffer[5:11], bytearray([0] * 6))
+        self.assertEqual(buffer[11], 0xFF)
+
+    def test_pack_record_with_dynamic_string_and_status(self):
+        # DATA SIGNATURE: {"Name"a[8*]"Status"L}
+        buffer = bytearray(1 + 8 + 4)
+        serializer = Serializer()
+        serializer.set_write_buffer(buffer)
+        serializer.set_value({
+            "Name": "Hi",
+            "Status": 0x12345678,
+        })
+        self.assertEqual(serializer.pack_record(), apx_base.Result.NO_ERROR)
+        self.assertEqual(serializer.record_select("Name", True), apx_base.Result.NO_ERROR)
+        self.assertEqual(serializer.pack_char(8, apx_base.SizeType.UINT8), apx_base.Result.NO_ERROR)
+        self.assertEqual(serializer.record_select("Status", False), apx_base.Result.NO_ERROR)
+        self.assertEqual(serializer.pack_uint32(), apx_base.Result.NO_ERROR)
+        self.assertEqual(serializer.record_end(), apx_base.Result.NO_ERROR)
+        self.assertEqual(serializer.bytes_written(), len(buffer))
+        self.assertEqual(buffer[0], 2)
+        self.assertEqual(buffer[1:3], bytearray(b"Hi"))
+        self.assertEqual(buffer[3:9], bytearray([0] * 6))
+        self.assertEqual(buffer[9:13], bytearray([0x78, 0x56, 0x34, 0x12]))
+
+    def test_pack_array_of_records_with_dynamic_string(self):
+        # DATA SIGNATURE: {"Label"a[4*]"Id"C}[2]
+        buffer = bytearray((1 + 4 + 1) * 2)
+        serializer = Serializer()
+        serializer.set_write_buffer(buffer)
+        serializer.set_value([
+            {"Label": "Cat", "Id": 10},
+            {"Label": "A", "Id": 20},
+        ])
+        self.assertEqual(serializer.pack_record(2), apx_base.Result.NO_ERROR)
+        self.assertEqual(serializer.record_select("Label", True), apx_base.Result.NO_ERROR)
+        self.assertEqual(serializer.pack_char(4, apx_base.SizeType.UINT8), apx_base.Result.NO_ERROR)
+        self.assertEqual(serializer.record_select("Id", False), apx_base.Result.NO_ERROR)
+        self.assertEqual(serializer.pack_uint8(), apx_base.Result.NO_ERROR)
+        self.assertEqual(serializer.record_end(), apx_base.Result.NO_ERROR)
+        rc, is_last = serializer.array_next()
+        self.assertEqual(rc, apx_base.Result.NO_ERROR)
+        self.assertFalse(is_last)
+        self.assertEqual(serializer.record_select("Label", True), apx_base.Result.NO_ERROR)
+        self.assertEqual(serializer.pack_char(4, apx_base.SizeType.UINT8), apx_base.Result.NO_ERROR)
+        self.assertEqual(serializer.record_select("Id", False), apx_base.Result.NO_ERROR)
+        self.assertEqual(serializer.pack_uint8(), apx_base.Result.NO_ERROR)
+        self.assertEqual(serializer.record_end(), apx_base.Result.NO_ERROR)
+        rc, is_last = serializer.array_next()
+        self.assertEqual(rc, apx_base.Result.NO_ERROR)
+        self.assertTrue(is_last)
+        self.assertEqual(serializer.bytes_written(), len(buffer))
+        expected = bytearray([
+            3, ord('C'), ord('a'), ord('t'), 0, 10,
+            1, ord('A'), 0, 0, 0, 20
+        ])
+        self.assertEqual(buffer, expected)

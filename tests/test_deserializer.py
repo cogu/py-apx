@@ -6,7 +6,7 @@ import os
 import sys
 import unittest
 import struct
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../src')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
 import apx.base as apx_base # noqa E402
 from apx.data import Deserializer # noqa E402
 
@@ -697,3 +697,100 @@ class TestDeserializerRecord(unittest.TestCase):
             {"Id": 2000, "Value": 0},
             {"Id": 4000, "Value": 1},
         ])
+
+    def test_unpack_record_dynamic_string_in_record(self):
+        # DATA SIGNATURE: {"First"a[10*]"Second"a[10*]}
+        buffer = bytes([5]) + b"Hello" + bytes([0xee] * 5) + bytes([3]) + b"APX" + bytes([0xee] * 7)
+        deserializer = Deserializer()
+        deserializer.set_read_buffer(buffer)
+        self.assertEqual(deserializer.unpack_record(), apx_base.Result.NO_ERROR)
+        self.assertEqual(deserializer.record_select("First", True), apx_base.Result.NO_ERROR)
+        self.assertEqual(deserializer.unpack_char(10, apx_base.SizeType.UINT8), apx_base.Result.NO_ERROR)
+        self.assertEqual(deserializer.record_select("Second", False), apx_base.Result.NO_ERROR)
+        self.assertEqual(deserializer.unpack_char(10, apx_base.SizeType.UINT8), apx_base.Result.NO_ERROR)
+        self.assertEqual(deserializer.record_end(), apx_base.Result.NO_ERROR)
+        self.assertEqual(deserializer.value(), {"First": "Hello", "Second": "APX"})
+
+    def test_unpack_record_dynstring_u32array(self):
+        # DATA SIGNATURE: {"First"a[10*]"Second"L[2]}
+        buffer = bytes([5]) + b"Data1" + bytes([0xee] * 5) + struct.pack("<2L", 0, 0x12345678)
+        deserializer = Deserializer()
+        deserializer.set_read_buffer(buffer)
+        self.assertEqual(deserializer.unpack_record(), apx_base.Result.NO_ERROR)
+        self.assertEqual(deserializer.record_select("First", True), apx_base.Result.NO_ERROR)
+        self.assertEqual(deserializer.unpack_char(10, apx_base.SizeType.UINT8), apx_base.Result.NO_ERROR)
+        self.assertEqual(deserializer.record_select("Second", False), apx_base.Result.NO_ERROR)
+        self.assertEqual(deserializer.unpack_uint32(2), apx_base.Result.NO_ERROR)
+        self.assertEqual(deserializer.record_end(), apx_base.Result.NO_ERROR)
+        self.assertEqual(deserializer.bytes_read(), len(buffer))
+        self.assertEqual(deserializer.value(), {"First": "Data1", "Second": [0, 0x12345678]})
+
+    def test_unpack_record_dynamic_uint16_array(self):
+        # DATA SIGNATURE: {"First"S[5*]"Second"C}
+        buffer = bytes([2]) + struct.pack("<2H", 1000, 2000) + bytes([0xee] * 6) + bytes([0xFF])
+        deserializer = Deserializer()
+        deserializer.set_read_buffer(buffer)
+        self.assertEqual(deserializer.unpack_record(), apx_base.Result.NO_ERROR)
+        self.assertEqual(deserializer.record_select("First", True), apx_base.Result.NO_ERROR)
+        self.assertEqual(deserializer.unpack_uint16(5, apx_base.SizeType.UINT8), apx_base.Result.NO_ERROR)
+        self.assertEqual(deserializer.record_select("Second", False), apx_base.Result.NO_ERROR)
+        self.assertEqual(deserializer.unpack_uint8(), apx_base.Result.NO_ERROR)
+        self.assertEqual(deserializer.record_end(), apx_base.Result.NO_ERROR)
+        self.assertEqual(deserializer.bytes_read(), len(buffer))
+        self.assertEqual(deserializer.value(), {"First": [1000, 2000], "Second": 255})
+
+    def test_unpack_record_bool_dynstring(self):
+        # DATA SIGNATURE: {"First"b"Second"a[10*]}
+        buffer = bytes([0x01, 4]) + b"Data"
+        deserializer = Deserializer()
+        deserializer.set_read_buffer(buffer)
+        self.assertEqual(deserializer.unpack_record(), apx_base.Result.NO_ERROR)
+        self.assertEqual(deserializer.record_select("First", True), apx_base.Result.NO_ERROR)
+        self.assertEqual(deserializer.unpack_bool(), apx_base.Result.NO_ERROR)
+        self.assertEqual(deserializer.record_select("Second", False), apx_base.Result.NO_ERROR)
+        self.assertEqual(deserializer.unpack_char(10, apx_base.SizeType.UINT8), apx_base.Result.NO_ERROR)
+        self.assertEqual(deserializer.record_end(), apx_base.Result.NO_ERROR)
+        self.assertEqual(deserializer.bytes_read(), len(buffer))
+        self.assertEqual(deserializer.value(), {"First": True, "Second": "Data"})
+
+    def test_unpack_array_of_records_with_dynamic_string(self):
+        # DATA SIGNATURE: {"Label"a[4*]"Id"C}[2]
+        buffer = bytes([3]) + b"Cat" + bytes([0xee]) + bytes([10]) + bytes([1]) + b"A" + bytes([0xee] * 3) + bytes([20])
+        deserializer = Deserializer()
+        deserializer.set_read_buffer(buffer)
+        self.assertEqual(deserializer.unpack_record(2), apx_base.Result.NO_ERROR)
+        self.assertEqual(deserializer.record_select("Label", True), apx_base.Result.NO_ERROR)
+        self.assertEqual(deserializer.unpack_char(4, apx_base.SizeType.UINT8), apx_base.Result.NO_ERROR)
+        self.assertEqual(deserializer.record_select("Id", False), apx_base.Result.NO_ERROR)
+        self.assertEqual(deserializer.unpack_uint8(), apx_base.Result.NO_ERROR)
+        self.assertEqual(deserializer.record_end(), apx_base.Result.NO_ERROR)
+        rc, is_last = deserializer.array_next()
+        self.assertEqual(rc, apx_base.Result.NO_ERROR)
+        self.assertFalse(is_last)
+        self.assertEqual(deserializer.record_select("Label", True), apx_base.Result.NO_ERROR)
+        self.assertEqual(deserializer.unpack_char(4, apx_base.SizeType.UINT8), apx_base.Result.NO_ERROR)
+        self.assertEqual(deserializer.record_select("Id", False), apx_base.Result.NO_ERROR)
+        self.assertEqual(deserializer.unpack_uint8(), apx_base.Result.NO_ERROR)
+        self.assertEqual(deserializer.record_end(), apx_base.Result.NO_ERROR)
+        rc, is_last = deserializer.array_next()
+        self.assertEqual(rc, apx_base.Result.NO_ERROR)
+        self.assertTrue(is_last)
+        self.assertEqual(deserializer.bytes_read(), len(buffer))
+        self.assertEqual(deserializer.value(), [
+            {"Label": "Cat", "Id": 10},
+            {"Label": "A", "Id": 20},
+        ])
+
+    def test_unpack_record_with_empty_dynamic_string(self):
+        # DATA SIGNATURE: {"Name"a[8*]"Status"L}
+        buffer = bytes([0]) + bytes([0xee] * 8) + struct.pack("<L", 0x12345678)
+        deserializer = Deserializer()
+        deserializer.set_read_buffer(buffer)
+        self.assertEqual(deserializer.unpack_record(), apx_base.Result.NO_ERROR)
+        self.assertEqual(deserializer.record_select("Name", True), apx_base.Result.NO_ERROR)
+        self.assertEqual(deserializer.unpack_char(8, apx_base.SizeType.UINT8), apx_base.Result.NO_ERROR)
+        self.assertEqual(deserializer.record_select("Status", False), apx_base.Result.NO_ERROR)
+        self.assertEqual(deserializer.unpack_uint32(), apx_base.Result.NO_ERROR)
+        self.assertEqual(deserializer.record_end(), apx_base.Result.NO_ERROR)
+        self.assertEqual(deserializer.bytes_read(), len(buffer))
+        self.assertEqual(deserializer.value(), {"Name": "", "Status": 0x12345678})

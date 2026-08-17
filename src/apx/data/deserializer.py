@@ -187,12 +187,13 @@ class DeserializerState:
         """
         Reads value from buffer based on configured type code.
         """
-        if self.dynamic_size_type is not None:
-            result = self.read_dynamic_value_from_buffer(self.array_len, self.dynamic_size_type)
-            if result != apx_base.Result.NO_ERROR:
-                return result
         if self.is_byte_type_code:
             return self.read_byte_array()
+        elif self.max_array_len > 0 or self.dynamic_size_type is not None:
+            if self.is_scalar_type_code:
+                return self.read_array_of_scalar_values()
+            elif self.is_string_type_code:
+                return self.read_string_value()
         elif self.array_len == 0:
             return self.read_scalar_value()
         else:
@@ -206,7 +207,9 @@ class DeserializerState:
         """
         Reads string value from buffer.
         """
-        assert self.array_len > 0
+        if self.array_len == 0:
+            self.value = ""
+            return apx_base.Result.NO_ERROR
         result, value = self.buffer.read_bytes(self.array_len)
         if result != apx_base.Result.NO_ERROR:
             return result
@@ -226,18 +229,18 @@ class DeserializerState:
         """
         Read bytes from buffer
         """
-        num_bytes = 1 if self.array_len == 0 else self.array_len
+        if self.dynamic_size_type is not None or self.max_array_len > 0:
+            num_bytes = self.array_len
+        else:
+            num_bytes = 1 if self.array_len == 0 else self.array_len
+        if num_bytes == 0:
+            self.value = b""
+            return apx_base.Result.NO_ERROR
         result, value = self.buffer.read_bytes(num_bytes)
         if result != apx_base.Result.NO_ERROR:
             return result
         self.value = bytes(value)
         return apx_base.Result.NO_ERROR
-
-    def read_dynamic_value_from_buffer(self, _value: int, _size_type: apx_base.SizeType) -> apx_base.Result:
-        """
-        Reads dynamic array length from buffer (not implemented in state).
-        """
-        return apx_base.Result.NOT_IMPLEMENTED_ERROR
 
     def read_scalar_value(self) -> apx_base.Result:
         """
@@ -254,6 +257,9 @@ class DeserializerState:
         """
         Reads array of scalar values from buffer.
         """
+        if self.array_len == 0:
+            self.value = []
+            return apx_base.Result.NO_ERROR
         pack_code = self.format_character[self.type_code.value]
         assert pack_code
         fmt_str = f"{self.endianness}{self.array_len}{pack_code}"
@@ -672,6 +678,7 @@ class Deserializer:
         if array_len > 0:
             if dynamic_size_type is not None:
                 self.state.max_array_len = array_len
+                self.state.dynamic_size_type = dynamic_size_type
                 result, value = self.read_buffer.read_dynamic_value(dynamic_size_type)
                 if result != apx_base.Result.NO_ERROR:
                     return result
