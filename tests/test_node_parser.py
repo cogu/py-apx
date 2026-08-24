@@ -2,12 +2,13 @@
 Unit tests for node parser
 """
 # pylint: disable=missing-class-docstring, missing-function-docstring
-import unittest
 import os
 import sys
+import unittest
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
 import apx.base as apx_base  # noqa E402
 import apx.model as apx_model  # noqa E402
+import apx.exception as apx_exception  # noqa E402
 from apx.parser import (  # noqa E402
     NodeParser,
     split_type_declaration,
@@ -262,9 +263,9 @@ N"TestNode"
 T"Notification_T"{{"ID"C(0,127)"Stat"C(0,3)"Type"C(0,7)}
 """
         parser = NodeParser()
-        node = parser.loads(apx_text)
+        with self.assertRaises(apx_exception.ParseError):
+            parser.loads(apx_text)
         self.assertEqual(parser.result, apx_base.Result.PARSE_ERROR)
-        self.assertIsNone(node)
 
     def test_parse_queued_provide_port_with_uint8_queue_size(self):
         apx_text = """APX/1.3
@@ -707,8 +708,8 @@ N"TestNode"
 R"Signal"a[10]:="café"
 """
         parser = NodeParser()
-        parser.loads(apx_text)
-        self.assertEqual(parser.result, apx_base.Result.INIT_VALUE_ERROR)
+        with self.assertRaises(apx_exception.ParseError):
+            parser.loads(apx_text)
 
     def test_derive_proper_init_value_char8_array(self):
         apx_text = """APX/1.3

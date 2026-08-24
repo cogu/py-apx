@@ -6,8 +6,8 @@ import unittest
 import os
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
-import apx
 import apx.base as apx_base
+import apx.parser
 import apx.vm.base
 import apx.vm.compiler
 

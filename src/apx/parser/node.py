@@ -6,6 +6,7 @@ from enum import Enum
 import re
 import apx.base as apx_base
 import apx.model as apx_model
+from apx.exception import ParseError
 from apx.parser.base import strip_comment, split_type_declaration, split_port_declaration
 from apx.parser.signature import SignatureParser
 from apx.parser.attribute import AttributeParser
@@ -49,10 +50,10 @@ class NodeParser:
         self.attribute_parser = AttributeParser()
         self.result: apx_base.Result | None = None
 
-    def loads(self, apx_text: str) -> apx_model.Node | None:
+    def loads(self, apx_text: str) -> apx_model.Node:
         """
         Parses an APX document from text string.
-        Returns a finalized Node on success, or None on failure.
+        Returns a finalized Node on success, or raises ParseError on failure.
         """
         self.state = NodeParseState()
         result = apx_base.Result.NO_ERROR
@@ -60,15 +61,81 @@ class NodeParser:
             self.state.line_number += 1
             result = self._parse_line(strip_comment(line))
             if result != apx_base.Result.NO_ERROR:
-                break
-        if result == apx_base.Result.NO_ERROR:
-            assert self.state.node is not None
-            self.result = self.state.node.finalize()
-            if self.result == apx_base.Result.NO_ERROR:
-                return self.state.node
-        else:
-            self.result = result
-        return None
+                self.result = result
+                raise ParseError(
+                    f"Error parsing line: {result.name}",
+                    line_number=self.state.line_number
+                )
+        if self.state.node is None:
+            self.result = apx_base.Result.PARSE_ERROR
+            raise ParseError("No APX node found in text", line_number=self.state.line_number)
+        self.result = self.state.node.finalize()
+        if self.result != apx_base.Result.NO_ERROR:
+            err_line = self.state.node.last_error_line or self.state.line_number
+            raise ParseError(
+                f"Error finalizing node '{self.state.node.name}': {self.result.name}",
+                line_number=err_line
+            )
+        return self.state.node
+
+    def from_base_node(self, base_node: apx_base.Node) -> apx_model.Node:
+        """
+        Creates and finalizes a model Node from a base (pseudo) Node.
+        Returns a finalized Node on success, or raises ParseError on failure.
+        """
+        if not isinstance(base_node, apx_base.Node):
+            raise TypeError(f"Expected apx.base.Node, got {type(base_node).__name__}")
+        self.state = NodeParseState()
+        self.state.node = apx_model.Node(base_node.name)
+
+        # 1. Add Data Types
+        for base_type in base_node.data_types:
+            result = self._accept_type_declaration_parts(
+                base_type.name,
+                base_type.dsg,
+                base_type.attributes
+            )
+            if result != apx_base.Result.NO_ERROR:
+                self.result = result
+                raise ParseError(
+                    f"Error parsing data type '{base_type.name}' signature '{base_type.dsg}': {result.name}"
+                )
+
+        # 2. Add Require Ports
+        for base_port in base_node.require_ports:
+            result = self._accept_port_declaration_parts(
+                'R',
+                base_port.name,
+                base_port.dsg,
+                base_port.attributes
+            )
+            if result != apx_base.Result.NO_ERROR:
+                self.result = result
+                raise ParseError(
+                    f"Error parsing require port '{base_port.name}' signature '{base_port.dsg}': {result.name}"
+                )
+
+        # 3. Add Provide Ports
+        for base_port in base_node.provide_ports:
+            result = self._accept_port_declaration_parts(
+                'P',
+                base_port.name,
+                base_port.dsg,
+                base_port.attributes
+            )
+            if result != apx_base.Result.NO_ERROR:
+                self.result = result
+                raise ParseError(
+                    f"Error parsing provide port '{base_port.name}' signature '{base_port.dsg}': {result.name}"
+                )
+
+        # 4. Finalize
+        self.result = self.state.node.finalize()
+        if self.result != apx_base.Result.NO_ERROR:
+            raise ParseError(
+                f"Error finalizing node '{base_node.name}': {self.result.name}"
+            )
+        return self.state.node
 
     def _finalize(self) -> None:
         self.result = apx_base.Result.NO_ERROR

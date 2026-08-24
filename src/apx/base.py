@@ -2,6 +2,7 @@
 Common definitions
 """
 from enum import Enum
+from apx.exception import DataTypeAlreadyExists, PortAlreadyExists
 
 # Constants
 
@@ -243,38 +244,6 @@ VALUE_CONVERSION_ERROR = Result.VALUE_CONVERSION_ERROR
 VALUE_LENGTH_ERROR = Result.VALUE_LENGTH_ERROR
 NUMBER_TOO_LARGE_ERROR = Result.NUMBER_TOO_LARGE_ERROR
 NO_VALUE_ERROR = Result.NO_VALUE_ERROR
-
-
-# Exceptions
-
-class DataTypeAlreadyExists(RuntimeError):
-    """
-    Exception raised when a data type already exists in the node.
-    """
-
-
-class PortAlreadyExists(RuntimeError):
-    """
-    Exception raised when a port already exists in the node.
-    """
-
-
-class ParseError(RuntimeError):
-    """
-    Exception raised when a parsing error occurs.
-    """
-
-
-class ValueTypeError(ValueError):
-    """
-    Exception raised when an invalid value type is encountered.
-    """
-
-
-class ValueRangeError(ValueError):
-    """
-    Exception raised when a value falls outside the valid range.
-    """
 
 
 # The purpose for below classes are for making the end user API easy to use.

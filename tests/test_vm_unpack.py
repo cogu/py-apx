@@ -6,21 +6,21 @@ import unittest
 import os
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
-import apx
 import apx.base as apx_base
-import apx.vm.base
-import apx.vm.compiler
-import apx.vm.machine
+from apx.parser import NodeParser
+import apx.vm.base as apx_vm_base
+from apx.vm.compiler import Compiler
+from apx.vm import VirtualMachine
 
 
 def compile_port(apx_text: str, is_pack: bool = False) -> bytes:
-    parser = apx.parser.NodeParser()
+    parser = NodeParser()
     node = parser.loads(apx_text)
     assert parser.result == apx_base.NO_ERROR
     ports = node.require_ports if len(node.require_ports) > 0 else node.provide_ports
     port = ports[0]
-    compiler = apx.vm.compiler.Compiler()
-    prog_type = apx.vm.base.ProgramType.PACK if is_pack else apx.vm.base.ProgramType.UNPACK
+    compiler = Compiler()
+    prog_type = apx_vm_base.ProgramType.PACK if is_pack else apx_vm_base.ProgramType.UNPACK
     result, program = compiler.compile_port(port, prog_type)
     assert result == apx_base.NO_ERROR
     return bytes(program)
@@ -32,7 +32,7 @@ class TestVMUnpackScalar(unittest.TestCase):
         program = compile_port('APX/1.3\n'
                                'N"TestNode"\n'
                                'R"Signal"C\n')
-        vm = apx.vm.VirtualMachine()
+        vm = VirtualMachine()
         self.assertEqual(vm.select_program(program), apx_base.NO_ERROR)
         self.assertEqual(vm.set_read_buffer(bytes([0x12])), apx_base.NO_ERROR)
         self.assertEqual(vm.unpack_value(), apx_base.NO_ERROR)
@@ -43,7 +43,7 @@ class TestVMUnpackScalar(unittest.TestCase):
         program = compile_port('APX/1.3\n'
                                'N"TestNode"\n'
                                'R"Signal"S\n')
-        vm = apx.vm.VirtualMachine()
+        vm = VirtualMachine()
         self.assertEqual(vm.select_program(program), apx_base.NO_ERROR)
         self.assertEqual(vm.set_read_buffer(bytes([0x34, 0x12])), apx_base.NO_ERROR)
         self.assertEqual(vm.unpack_value(), apx_base.NO_ERROR)
@@ -54,7 +54,7 @@ class TestVMUnpackScalar(unittest.TestCase):
         program = compile_port('APX/1.3\n'
                                'N"TestNode"\n'
                                'R"Signal"L\n')
-        vm = apx.vm.VirtualMachine()
+        vm = VirtualMachine()
         self.assertEqual(vm.select_program(program), apx_base.NO_ERROR)
         self.assertEqual(vm.set_read_buffer(bytes([0x78, 0x56, 0x34, 0x12])), apx_base.NO_ERROR)
         self.assertEqual(vm.unpack_value(), apx_base.NO_ERROR)
@@ -65,7 +65,7 @@ class TestVMUnpackScalar(unittest.TestCase):
         program = compile_port('APX/1.3\n'
                                'N"TestNode"\n'
                                'R"Signal"Q\n')
-        vm = apx.vm.VirtualMachine()
+        vm = VirtualMachine()
         self.assertEqual(vm.select_program(program), apx_base.NO_ERROR)
         self.assertEqual(
             vm.set_read_buffer(bytes([0x88, 0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11])),
@@ -79,7 +79,7 @@ class TestVMUnpackScalar(unittest.TestCase):
         program = compile_port('APX/1.3\n'
                                'N"TestNode"\n'
                                'R"Signal"c\n')
-        vm = apx.vm.VirtualMachine()
+        vm = VirtualMachine()
         self.assertEqual(vm.select_program(program), apx_base.NO_ERROR)
         self.assertEqual(vm.set_read_buffer(bytes([0xFB])), apx_base.NO_ERROR)
         self.assertEqual(vm.unpack_value(), apx_base.NO_ERROR)
@@ -90,7 +90,7 @@ class TestVMUnpackScalar(unittest.TestCase):
         program = compile_port('APX/1.3\n'
                                'N"TestNode"\n'
                                'R"Signal"s\n')
-        vm = apx.vm.VirtualMachine()
+        vm = VirtualMachine()
         self.assertEqual(vm.select_program(program), apx_base.NO_ERROR)
         self.assertEqual(vm.set_read_buffer(bytes([0x18, 0xFC])), apx_base.NO_ERROR)
         self.assertEqual(vm.unpack_value(), apx_base.NO_ERROR)
@@ -101,7 +101,7 @@ class TestVMUnpackScalar(unittest.TestCase):
         program = compile_port('APX/1.3\n'
                                'N"TestNode"\n'
                                'R"Signal"l\n')
-        vm = apx.vm.VirtualMachine()
+        vm = VirtualMachine()
         self.assertEqual(vm.select_program(program), apx_base.NO_ERROR)
         self.assertEqual(vm.set_read_buffer(bytes([0x60, 0x79, 0xFE, 0xFF])), apx_base.NO_ERROR)
         self.assertEqual(vm.unpack_value(), apx_base.NO_ERROR)
@@ -112,7 +112,7 @@ class TestVMUnpackScalar(unittest.TestCase):
         program = compile_port('APX/1.3\n'
                                'N"TestNode"\n'
                                'R"Signal"q\n')
-        vm = apx.vm.VirtualMachine()
+        vm = VirtualMachine()
         self.assertEqual(vm.select_program(program), apx_base.NO_ERROR)
         self.assertEqual(
             vm.set_read_buffer(bytes([0x00, 0x0E, 0xFA, 0xD5, 0xFE, 0xFF, 0xFF, 0xFF])),
@@ -126,7 +126,7 @@ class TestVMUnpackScalar(unittest.TestCase):
         program = compile_port('APX/1.3\n'
                                'N"TestNode"\n'
                                'R"Signal"b\n')
-        vm = apx.vm.VirtualMachine()
+        vm = VirtualMachine()
         self.assertEqual(vm.select_program(program), apx_base.NO_ERROR)
 
         self.assertEqual(vm.set_read_buffer(bytes([1])), apx_base.NO_ERROR)
@@ -141,7 +141,7 @@ class TestVMUnpackScalar(unittest.TestCase):
         program = compile_port('APX/1.3\n'
                                'N"TestNode"\n'
                                'R"Signal"C\n')
-        vm = apx.vm.VirtualMachine()
+        vm = VirtualMachine()
         self.assertEqual(vm.select_program(program), apx_base.NO_ERROR)
         self.assertEqual(vm.set_read_buffer(bytes([0xAB])), apx_base.NO_ERROR)
         self.assertEqual(vm.unpack_value(), apx_base.NO_ERROR)
@@ -151,7 +151,7 @@ class TestVMUnpackScalar(unittest.TestCase):
         program = compile_port('APX/1.3\n'
                                'N"TestNode"\n'
                                'R"Signal"a\n')
-        vm = apx.vm.VirtualMachine()
+        vm = VirtualMachine()
         self.assertEqual(vm.select_program(program), apx_base.NO_ERROR)
         self.assertEqual(vm.set_read_buffer(b'A'), apx_base.NO_ERROR)
         self.assertEqual(vm.unpack_value(), apx_base.NO_ERROR)
@@ -161,7 +161,7 @@ class TestVMUnpackScalar(unittest.TestCase):
         program = compile_port('APX/1.3\n'
                                'N"TestNode"\n'
                                'R"Signal"S\n')
-        vm = apx.vm.VirtualMachine()
+        vm = VirtualMachine()
         self.assertEqual(vm.select_program(program), apx_base.NO_ERROR)
         large_buffer = bytes([0, 0, 0, 0, 0x34, 0x12, 0, 0])
         mv = memoryview(large_buffer)[4:6]
@@ -176,7 +176,7 @@ class TestVMUnpackRangeCheck(unittest.TestCase):
         program = compile_port('APX/1.3\n'
                                'N"TestNode"\n'
                                'R"Signal"C(0, 100)\n')
-        vm = apx.vm.VirtualMachine()
+        vm = VirtualMachine()
         self.assertEqual(vm.select_program(program), apx_base.NO_ERROR)
 
         # In range
@@ -192,7 +192,7 @@ class TestVMUnpackRangeCheck(unittest.TestCase):
         program = compile_port('APX/1.3\n'
                                'N"TestNode"\n'
                                'R"Signal"l(-1000, 1000)\n')
-        vm = apx.vm.VirtualMachine()
+        vm = VirtualMachine()
         self.assertEqual(vm.select_program(program), apx_base.NO_ERROR)
 
         # In range (-500)
@@ -211,7 +211,7 @@ class TestVMUnpackArray(unittest.TestCase):
         program = compile_port('APX/1.3\n'
                                'N"TestNode"\n'
                                'R"Signal"C[3]\n')
-        vm = apx.vm.VirtualMachine()
+        vm = VirtualMachine()
         self.assertEqual(vm.select_program(program), apx_base.NO_ERROR)
         self.assertEqual(vm.set_read_buffer(bytes([10, 20, 30])), apx_base.NO_ERROR)
         self.assertEqual(vm.unpack_value(), apx_base.NO_ERROR)
@@ -222,7 +222,7 @@ class TestVMUnpackArray(unittest.TestCase):
         program = compile_port('APX/1.3\n'
                                'N"TestNode"\n'
                                'R"Signal"S[2]\n')
-        vm = apx.vm.VirtualMachine()
+        vm = VirtualMachine()
         self.assertEqual(vm.select_program(program), apx_base.NO_ERROR)
         self.assertEqual(vm.set_read_buffer(bytes([0x00, 0x01, 0x00, 0x02])), apx_base.NO_ERROR)
         self.assertEqual(vm.unpack_value(), apx_base.NO_ERROR)
@@ -233,7 +233,7 @@ class TestVMUnpackArray(unittest.TestCase):
         program = compile_port('APX/1.3\n'
                                'N"TestNode"\n'
                                'R"Signal"a[6]\n')
-        vm = apx.vm.VirtualMachine()
+        vm = VirtualMachine()
         self.assertEqual(vm.select_program(program), apx_base.NO_ERROR)
         self.assertEqual(vm.set_read_buffer(b"Hello\x00"), apx_base.NO_ERROR)
         self.assertEqual(vm.unpack_value(), apx_base.NO_ERROR)
@@ -247,7 +247,7 @@ class TestVMUnpackDynamicArray(unittest.TestCase):
         program = compile_port('APX/1.3\n'
                                'N"TestNode"\n'
                                'R"Signal"C[8*]\n')
-        vm = apx.vm.VirtualMachine()
+        vm = VirtualMachine()
         self.assertEqual(vm.select_program(program), apx_base.NO_ERROR)
         raw_data = bytes([3, 1, 2, 3, 0, 0, 0, 0, 0])
         self.assertEqual(vm.set_read_buffer(raw_data), apx_base.NO_ERROR)
@@ -259,7 +259,7 @@ class TestVMUnpackDynamicArray(unittest.TestCase):
         program = compile_port('APX/1.3\n'
                                'N"TestNode"\n'
                                'R"Signal"a[8*]\n')
-        vm = apx.vm.VirtualMachine()
+        vm = VirtualMachine()
         self.assertEqual(vm.select_program(program), apx_base.NO_ERROR)
         raw_data = bytes([2, ord('H'), ord('i'), 0, 0, 0, 0, 0, 0])
         self.assertEqual(vm.set_read_buffer(raw_data), apx_base.NO_ERROR)
@@ -274,7 +274,7 @@ class TestVMUnpackRecord(unittest.TestCase):
         program = compile_port('APX/1.3\n'
                                'N"TestNode"\n'
                                'R"Signal"{"U16"S"U8"C}\n')
-        vm = apx.vm.VirtualMachine()
+        vm = VirtualMachine()
         self.assertEqual(vm.select_program(program), apx_base.NO_ERROR)
         self.assertEqual(vm.set_read_buffer(bytes([0x34, 0x12, 0x56])), apx_base.NO_ERROR)
         self.assertEqual(vm.unpack_value(), apx_base.NO_ERROR)
@@ -285,7 +285,7 @@ class TestVMUnpackRecord(unittest.TestCase):
         program = compile_port('APX/1.3\n'
                                'N"TestNode"\n'
                                'R"Signal"{"Name"a[8*]"Status"L}\n')
-        vm = apx.vm.VirtualMachine()
+        vm = VirtualMachine()
         self.assertEqual(vm.select_program(program), apx_base.NO_ERROR)
         raw_data = bytes([2, ord('H'), ord('i'), 0, 0, 0, 0, 0, 0, 0x78, 0x56, 0x34, 0x12])
         self.assertEqual(vm.set_read_buffer(raw_data), apx_base.NO_ERROR)
@@ -297,7 +297,7 @@ class TestVMUnpackRecord(unittest.TestCase):
         program = compile_port('APX/1.3\n'
                                'N"TestNode"\n'
                                'R"Signal"{"Val"C(10, 50)}\n')
-        vm = apx.vm.VirtualMachine()
+        vm = VirtualMachine()
         self.assertEqual(vm.select_program(program), apx_base.NO_ERROR)
 
         self.assertEqual(vm.set_read_buffer(bytes([30])), apx_base.NO_ERROR)
@@ -314,7 +314,7 @@ class TestVMUnpackRecordArray(unittest.TestCase):
         program = compile_port('APX/1.3\n'
                                'N"TestNode"\n'
                                'R"Signal"{"U16"S"U8"C}[2]\n')
-        vm = apx.vm.VirtualMachine()
+        vm = VirtualMachine()
         self.assertEqual(vm.select_program(program), apx_base.NO_ERROR)
         self.assertEqual(vm.set_read_buffer(bytes([0x02, 0x01, 0x03, 0x05, 0x04, 0x06])), apx_base.NO_ERROR)
         self.assertEqual(vm.unpack_value(), apx_base.NO_ERROR)
@@ -331,7 +331,7 @@ class TestVMUnpackRecordArray(unittest.TestCase):
         program = compile_port('APX/1.3\n'
                                'N"TestNode"\n'
                                'R"Signal"{"Label"a[4*]"Id"C}[2]\n')
-        vm = apx.vm.VirtualMachine()
+        vm = VirtualMachine()
         self.assertEqual(vm.select_program(program), apx_base.NO_ERROR)
         raw_data = bytes([
             3, ord('C'), ord('a'), ord('t'), 0, 10,
@@ -355,13 +355,13 @@ class TestVMUnpackErrorHandling(unittest.TestCase):
         pack_program = compile_port('APX/1.3\n'
                                     'N"TestNode"\n'
                                     'P"Signal"C:=0\n', is_pack=True)
-        vm = apx.vm.VirtualMachine()
+        vm = VirtualMachine()
         self.assertEqual(vm.select_program(pack_program), apx_base.NO_ERROR)
         vm.set_read_buffer(bytes([10]))
         self.assertEqual(vm.unpack_value(), apx_base.INVALID_PROGRAM_ERROR)
 
     def test_unpack_without_program_fails(self):
-        vm = apx.vm.VirtualMachine()
+        vm = VirtualMachine()
         vm.set_read_buffer(bytes([10]))
         self.assertEqual(vm.unpack_value(), apx_base.INVALID_PROGRAM_ERROR)
 
