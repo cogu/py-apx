@@ -7,9 +7,9 @@ from collections import deque
 import apx.base as apx_base
 
 DYNAMIC_SIZE_STRUCT = [
-    'B',  # UINT8
-    'H',  # UINT16
-    'L',  # UINT32
+    '<B',  # UINT8
+    '<H',  # UINT16
+    '<I',  # UINT32
 ]
 
 
