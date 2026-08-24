@@ -14,12 +14,14 @@ from apx import numheader
 from apx import model
 from apx import parser
 from apx import vm
+from apx.writer import Writer
 
 __all__ = [
     "Node",
     "RequirePort",
     "ProvidePort",
     "DataType",
+    "Writer",
     "ParseError",
     "DuplicateElement",
     "DataTypeAlreadyExists",
