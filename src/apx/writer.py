@@ -31,13 +31,14 @@ class Writer:
     APX node writer class
     """
 
-    def __init__(self, version: str = "APX/1.3") -> None:
+    def __init__(self, version: str = "APX/1.3", compact: bool = False) -> None:
         self.file_path: str | None = None
         self.fh: TextIO | None = None
         self.line_number: int = 0
         self.version: str = version
         self.major_version: int = 1
         self.minor_version: int = 3
+        self.compact: bool = compact
         self.node: apx_model.Node | None = None
         self._set_version(version)
 
@@ -97,11 +98,14 @@ class Writer:
         if self.major_version != 1 or self.minor_version not in (2, 3):
             raise ValueError(f"Unsupported APX version: {self.major_version}.{self.minor_version}")
 
-    def write_str(self, node: apx_model.Node | apx_base.Node, version: str | None = None) -> str:
+    def write_str(self, node: apx_model.Node | apx_base.Node, version: str | None = None,
+                  compact: bool | None = None) -> str:
         """
         Serializes the APX node to string.
         """
         self._set_version(version)
+        if compact is not None:
+            self.compact = compact
         model_node = self._prepare_node(node)
         self.node = model_node
         self._str_open()
@@ -109,11 +113,14 @@ class Writer:
         assert self.fh is not None
         return self.fh.getvalue()
 
-    def write_file(self, node: apx_model.Node | apx_base.Node, file_path: str, version: str | None = None) -> None:
+    def write_file(self, node: apx_model.Node | apx_base.Node, file_path: str,
+                   version: str | None = None, compact: bool | None = None) -> None:
         """
         Serializes the APX node to file.
         """
         self._set_version(version)
+        if compact is not None:
+            self.compact = compact
         model_node = self._prepare_node(node)
         self.node = model_node
         self._open(file_path)
@@ -134,11 +141,14 @@ class Writer:
         assert self.fh is not None
         return self.fh.getvalue()
 
-    def write_body_str(self, node: apx_model.Node | apx_base.Node, version: str | None = None) -> str:
+    def write_body_str(self, node: apx_model.Node | apx_base.Node, version: str | None = None,
+                       compact: bool | None = None) -> str:
         """
         Serializes the APX node body to string (skipping header lines).
         """
         self._set_version(version)
+        if compact is not None:
+            self.compact = compact
         model_node = self._prepare_node(node)
         self.node = model_node
         self._str_open()
@@ -221,10 +231,11 @@ class Writer:
         return res
 
     def _format_type_reference(self, elem: apx_model.DataElement) -> str:
+        use_index = self.minor_version == 2 or self.compact
         if elem.type_code == apx_base.TypeCode.TYPE_REF_PTR:
             data_type = elem.typeref
             assert isinstance(data_type, apx_model.DataType)
-            if self.minor_version == 2:
+            if use_index:
                 index = self._get_data_type_index(data_type)
                 return f"T[{index}]"
             else:
@@ -232,7 +243,7 @@ class Writer:
         elif elem.type_code == apx_base.TypeCode.TYPE_REF_NAME:
             name = elem.typeref
             assert isinstance(name, str)
-            if self.minor_version == 2:
+            if use_index:
                 index = self._find_data_type_index_by_name(name)
                 return f"T[{index}]"
             else:
@@ -240,7 +251,7 @@ class Writer:
         elif elem.type_code == apx_base.TypeCode.TYPE_REF_ID:
             idx = elem.typeref
             assert isinstance(idx, int)
-            if self.minor_version == 3 and self.node is not None and idx < len(self.node.data_types):
+            if not use_index and self.node is not None and idx < len(self.node.data_types):
                 return f'T["{self.node.data_types[idx].name}"]'
             else:
                 return f"T[{idx}]"

@@ -346,5 +346,97 @@ class TestWriterRoundtrip(unittest.TestCase):
         self.assertEqual(parsed_node.require_ports[0].name, 'EngineSpeed')
 
 
+class TestWriterCompact(unittest.TestCase):
+    """Unit tests for compact type reference writing."""
+
+    def test_write_type_ref_compact_v13(self):
+        node = apx.Node('TypeRefNode')
+        node.append(apx.DataType('VehicleSpeed_T', 'S'))
+        node.append(apx.RequirePort('VehicleSpeed', 'T["VehicleSpeed_T"]', '=65535'))
+
+        writer = Writer()
+        # Default APX/1.3 writes by name
+        body_normal = writer.write_body_str(node, version="APX/1.3")
+        expected_normal = (
+            'T"VehicleSpeed_T"S\n'
+            'R"VehicleSpeed"T["VehicleSpeed_T"]:=65535'
+        )
+        self.assertEqual(body_normal, expected_normal)
+
+        # Compact APX/1.3 writes by index
+        body_compact = writer.write_body_str(node, version="APX/1.3", compact=True)
+        expected_compact = (
+            'T"VehicleSpeed_T"S\n'
+            'R"VehicleSpeed"T[0]:=65535'
+        )
+        self.assertEqual(body_compact, expected_compact)
+
+    def test_writer_init_compact(self):
+        node = apx.Node('TypeRefNode')
+        node.append(apx.DataType('VehicleSpeed_T', 'S'))
+        node.append(apx.RequirePort('VehicleSpeed', 'T["VehicleSpeed_T"]', '=65535'))
+
+        writer = Writer(compact=True)
+        full_str = writer.write_str(node)
+        expected = (
+            'APX/1.3\n'
+            'N"TypeRefNode"\n'
+            'T"VehicleSpeed_T"S\n'
+            'R"VehicleSpeed"T[0]:=65535'
+        )
+        self.assertEqual(full_str, expected)
+
+    def test_v12_ignores_compact_false(self):
+        node = apx.Node('TypeRefNode')
+        node.append(apx.DataType('VehicleSpeed_T', 'S'))
+        node.append(apx.RequirePort('VehicleSpeed', 'T["VehicleSpeed_T"]', '=65535'))
+
+        writer = Writer()
+        # APX/1.2 always writes by index regardless of compact setting
+        body_false = writer.write_body_str(node, version="APX/1.2", compact=False)
+        body_true = writer.write_body_str(node, version="APX/1.2", compact=True)
+        expected = (
+            'T"VehicleSpeed_T"S\n'
+            'R"VehicleSpeed"T[0]:=65535'
+        )
+        self.assertEqual(body_false, expected)
+        self.assertEqual(body_true, expected)
+
+    def test_record_with_type_ref_compact(self):
+        node = apx.Node('RecordNode')
+        node.append(apx.DataType('TypeA', 'C'))
+        node.append(apx.DataType('TypeB', 'S'))
+        node.append(apx.DataType('TypeC', '{"First"T["TypeA"]"Second"T["TypeB"]}'))
+        node.append(apx.ProvidePort('Port1', 'T["TypeC"]'))
+
+        writer = Writer()
+        body_compact = writer.write_body_str(node, version="APX/1.3", compact=True)
+        expected_compact = (
+            'T"TypeA"C\n'
+            'T"TypeB"S\n'
+            'T"TypeC"{"First"T[0]"Second"T[1]}\n'
+            'P"Port1"T[2]'
+        )
+        self.assertEqual(body_compact, expected_compact)
+
+    def test_compact_roundtrip_with_parser(self):
+        base_node = apx.Node('RoundtripCompactNode')
+        base_node.append(apx.DataType('VehicleSpeed_T', 'S'))
+        base_node.append(apx.ProvidePort('VehicleSpeed', 'T["VehicleSpeed_T"]', '=0'))
+
+        writer = Writer(compact=True)
+        apx_text = writer.write_str(base_node)
+
+        parser = NodeParser()
+        parsed_node = parser.loads(apx_text)
+
+        self.assertEqual(parser.result, apx_base.Result.NO_ERROR)
+        self.assertEqual(parsed_node.name, 'RoundtripCompactNode')
+        self.assertEqual(len(parsed_node.data_types), 1)
+        self.assertEqual(len(parsed_node.provide_ports), 1)
+        self.assertEqual(parsed_node.provide_ports[0].name, 'VehicleSpeed')
+
+
 if __name__ == '__main__':
     unittest.main()
+

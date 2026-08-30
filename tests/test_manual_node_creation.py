@@ -182,5 +182,38 @@ class TestNodeCreation(unittest.TestCase):
             parser.from_base_node("not a node")
 
 
+    def _create_unsorted_model_node(self) -> apx_model.Node:
+        node = apx_model.Node('TestNode')
+        for name in ['Zebra_T', 'Alpha_T', 'Beta_T']:
+            dt = apx_model.DataType(name)
+            dt.data_element = apx_model.DataElement(apx_base.TypeCode.UINT8)
+            node.append(dt)
+        for name in ['ZuluPort', 'AlphaPort']:
+            rp = apx_model.RequirePort(name)
+            rp.data_element = apx_model.DataElement(apx_base.TypeCode.UINT8)
+            node.append(rp)
+        for name in ['YankeePort', 'BravoPort']:
+            pp = apx_model.ProvidePort(name)
+            pp.data_element = apx_model.DataElement(apx_base.TypeCode.UINT8)
+            node.append(pp)
+        return node
+
+    def test_finalize_default_sorts_lists_alphabetically(self):
+        node = self._create_unsorted_model_node()
+        result = node.finalize()
+        self.assertEqual(result, apx_base.Result.NO_ERROR)
+        self.assertEqual([t.name for t in node.data_types], ['Alpha_T', 'Beta_T', 'Zebra_T'])
+        self.assertEqual([p.name for p in node.require_ports], ['AlphaPort', 'ZuluPort'])
+        self.assertEqual([p.name for p in node.provide_ports], ['BravoPort', 'YankeePort'])
+
+    def test_finalize_sort_false_preserves_order(self):
+        node = self._create_unsorted_model_node()
+        result = node.finalize(sort=False)
+        self.assertEqual(result, apx_base.Result.NO_ERROR)
+        self.assertEqual([t.name for t in node.data_types], ['Zebra_T', 'Alpha_T', 'Beta_T'])
+        self.assertEqual([p.name for p in node.require_ports], ['ZuluPort', 'AlphaPort'])
+        self.assertEqual([p.name for p in node.provide_ports], ['YankeePort', 'BravoPort'])
+
+
 if __name__ == '__main__':
     unittest.main()

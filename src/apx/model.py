@@ -755,7 +755,7 @@ class Node:
             raise apx_base.PortAlreadyExists(port.name)
         return port
 
-    def finalize(self) -> apx_base.Result:
+    def finalize(self, sort: bool = True) -> apx_base.Result:
         """
         Finalizes the node by resolving type references, creating effective elements,
         and deriving initial values.
@@ -771,8 +771,16 @@ class Node:
         result = self._derive_proper_init_values_on_ports(self.provide_ports + self.require_ports)
         if result != apx_base.NO_ERROR:
             return result
+        if sort:
+            self._sort()
         self.is_finalized = True
         return apx_base.NO_ERROR
+
+    def _sort(self) -> None:
+        self.data_types = sorted(self.data_types, key=lambda item: item.name)
+        self.require_ports = sorted(self.require_ports, key=lambda item: item.name)
+        self.provide_ports = sorted(self.provide_ports, key=lambda item: item.name)
+
 
     def _follow_type_references_on_ports(self, ports: list['Port']) -> apx_base.Result:
         for port in ports:

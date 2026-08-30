@@ -11,7 +11,7 @@ from apx.writer import Writer
 
 
 def main() -> None:
-    arg_parser = argparse.ArgumentParser(description="Normalize APX file by sorting elements and using name-based type references.")
+    arg_parser = argparse.ArgumentParser(description="Compact APX file by using index-based type references.")
     arg_parser.add_argument(
         'input_file',
         nargs='?',
@@ -36,7 +36,7 @@ def main() -> None:
         text = Path(args.input_file).read_text(encoding='utf-8')
 
     parser = NodeParser()
-    writer = Writer(compact=False)
+    writer = Writer(compact=True)
     node = parser.loads(text)
 
     # 2. Write output
