@@ -26,3 +26,5 @@ Project Links
    :maxdepth: 2
 
    node
+   api/index
+

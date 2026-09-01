@@ -20,6 +20,7 @@ def strip_comment(apx_text: str) -> str:
 def split_type_declaration(apx_text: str) -> tuple[str, str, str | None] | None:
     """
     Splits a type declaration line into tokens.
+
     Returns a 3-element tuple:
         1. Type Name : str
         2. Type Signature : str
@@ -37,6 +38,7 @@ def split_type_declaration(apx_text: str) -> tuple[str, str, str | None] | None:
 def split_port_declaration(apx_text: str) -> tuple[str, str, str, str | None] | None:
     """
     Splits a port declaration line into tokens.
+
     Returns a 4-element tuple:
         1. Port Type : str ('P' or 'R')
         2. Type Name : str
