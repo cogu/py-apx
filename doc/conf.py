@@ -14,18 +14,15 @@ release = 'v0.5.0'
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = ['sphinxcontrib.plantuml', 'myst_parser']
+extensions = ['sphinxcontrib.mermaid', 'myst_parser']
 
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
-
-#plantuml = r'C:\Applications\plantuml\plantuml.exe'
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = 'furo'
-html_static_path = ['_static']
 
 source_suffix = {
     '.rst': 'restructuredtext',

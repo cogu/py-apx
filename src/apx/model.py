@@ -781,7 +781,6 @@ class Node:
         self.require_ports = sorted(self.require_ports, key=lambda item: item.name)
         self.provide_ports = sorted(self.provide_ports, key=lambda item: item.name)
 
-
     def _follow_type_references_on_ports(self, ports: list['Port']) -> apx_base.Result:
         for port in ports:
             result = port.follow_type_references(self.data_types, self.data_type_map)

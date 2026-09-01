@@ -138,15 +138,6 @@ Once virtual environment is active run:
 
 ```bash
 python -m pip install --upgrade pip setuptools
-python -m pip install -r requirements.txt
-```
-
-#### Developer dependencies (optional)
-
-If you are a package developer, you also need to install additional tools for linting, packaging, and building documentation:
-
-```bash
-python -m pip install --upgrade flake8 build twine sphinx
 ```
 
 #### Installing the Python module
@@ -162,8 +153,35 @@ pip install .
 For editable install (developers):
 
 ```bash
-pip install --editable .
+python -m pip install --editable ".[dev]"
 ```
+
+For editable install with documentation tools:
+
+```bash
+python -m pip install --editable ".[dev,docs]"
+```
+
+The `docs` extra installs Sphinx, the Furo theme, MyST Markdown support, Mermaid
+diagram support, and automatic rebuilding for HTML documentation.
+
+## Building the Documentation
+
+Build the HTML documentation once:
+
+```bash
+python -m sphinx -b html doc doc/_build/html
+```
+
+To rebuild automatically when documentation files change and preview the site
+with live reload, run:
+
+```bash
+sphinx-autobuild doc doc/_build/html
+```
+
+The preview server is available at <http://127.0.0.1:8000> by default. Stop it
+with `Ctrl+C`.
 
 ## Running Unit Tests
 

@@ -181,7 +181,6 @@ class TestNodeCreation(unittest.TestCase):
         with self.assertRaises(TypeError):
             parser.from_base_node("not a node")
 
-
     def _create_unsorted_model_node(self) -> apx_model.Node:
         node = apx_model.Node('TestNode')
         for name in ['Zebra_T', 'Alpha_T', 'Beta_T']:

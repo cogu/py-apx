@@ -439,4 +439,3 @@ class TestWriterCompact(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-

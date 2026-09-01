@@ -1,14 +1,28 @@
-.. py-apx documentation master file, created by
-   sphinx-quickstart on Sun Aug 23 23:58:14 2026.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+py-apx
+======
 
-py-apx documentation
-====================
+Welcome to the documentation for **py-apx**, the official Python 3
+implementation of APX (AUTOSAR Port eXchange).
 
+APX is a framework and protocol for exchanging AUTOSAR signal data with
+non-AUTOSAR applications. The py-apx package provides tools for defining APX
+nodes and ports, parsing APX definitions, serializing signal data, and executing
+APX virtual machine programs.
+
+Getting Started
+---------------
+
+Start with :doc:`node` to learn how to create APX nodes, data types, and ports
+programmatically.
+
+Project Links
+-------------
+
+* `Source code on GitHub <https://github.com/cogu/py-apx>`_
+* `APX project documentation <https://cogu.github.io/apx/>`_
 
 .. toctree::
+   :hidden:
    :maxdepth: 2
-   :caption: Contents:
 
    node
