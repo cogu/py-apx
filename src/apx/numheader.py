@@ -1,108 +1,116 @@
+"""Functions for encoding and decoding APX numeric headers.
+
+NumHeader encodes an integer in Big-Endian (network byte order),
+commonly used as a message length prefix. The most significant bit
+(MSB / bit 7) of the first byte acts as a `LONG_BIT`:
+- `0`: 1-byte short form (values 0..127)
+- `1`: Multi-byte long form (2 bytes for NumHeader16, 4 bytes for NumHeader32)
 """
-Functions for encoding and decoding APX NumHeader (NumHeader16 and NumHeader32).
-"""
+import struct
 
-
-def _decode(data: bytes | bytearray, mode: int = 16, offset: int = 0,
-            end: int | None = None) -> tuple[int, int | None]:
-    """
-    Decodes numheader from data (which is byte or bytearray).
-    Mode can be either 16 or 32 (number of bits parsed when long_bit is 1)
-
-    Returns tuple (bytes_parsed, value)
-    """
-    bytes_parsed = 0
-    value = None
-    if end is None:
-        end = len(data)
-    if offset + 1 <= end:  # at least 1 byte in data?
-        b1 = data[offset]
-        if b1 & 0x80:
-            b1 &= 0x7F
-            # MSB is set, parse next 1 or 3 bytes depending on mode
-            if mode == 16:  # NumHeader16
-                if offset + 2 <= end:
-                    bytes_parsed = 2
-                    b2 = data[offset + 1]
-                    value = (b1 << 8) | b2
-                    # range(0,128) with MSB set to 1 shall be interpreted as 32768..32895
-                    if value < 128:
-                        value += 32768
-            elif mode == 32:  # NumHeader32
-                if offset + 4 <= end:
-                    bytes_parsed = 4
-                    b2, b3, b4 = data[offset + 1:offset + 4]
-                    value = (b1 << 24) | (b2 << 16) | (b3 << 8) | b4
-            else:
-                raise ValueError('invalid mode argument: ' + str(mode))
-        else:
-            bytes_parsed = 1
-            value = b1
-    return (bytes_parsed, value)
+_ST_UINT16 = struct.Struct('>H')
+_ST_UINT32 = struct.Struct('>I')
 
 
 def decode16(data: bytes | bytearray, offset: int = 0,
              end: int | None = None) -> tuple[int, int | None]:
-    """
-    Decodes NumHeader16 value from bytearray
+    """Decodes a NumHeader16 value from a byte buffer.
 
-    Returns tuple (bytes_parsed, value)
+    NumHeader16 parses 1 byte for values 0..127 and 2 bytes for
+    values 128..32,895.
+
+    Args:
+        data: Byte buffer containing encoded NumHeader16 data.
+        offset: Starting byte index in buffer (defaults to 0).
+        end: Ending byte index in buffer (defaults to len(data)).
+
+    Returns:
+        A tuple of `(bytes_parsed, value)`:
+        - `bytes_parsed`: Number of bytes consumed (1, 2, or 0 if short).
+        - `value`: Decoded integer (0..32,895), or `None` if buffer is short.
     """
-    return _decode(data, 16, offset, end)
+    if end is None:
+        end = len(data)
+    if offset + 1 <= end:
+        if (data[offset] & 0x80) == 0:
+            return 1, data[offset]
+        if offset + 2 <= end:
+            val = _ST_UINT16.unpack_from(data, offset)[0] & 0x7FFF
+            if val < 128:
+                val += 32768
+            return 2, val
+    return 0, None
 
 
 def decode32(data: bytes | bytearray, offset: int = 0,
              end: int | None = None) -> tuple[int, int | None]:
-    """
-    Decodes NumHeader32 value from bytearray
+    """Decodes a NumHeader32 value from a byte buffer.
 
-    Returns tuple (bytes_parsed, value)
-    """
-    return _decode(data, 32, offset, end)
+    NumHeader32 parses 1 byte for values 0..127 and 4 bytes for
+    values 128..2,147,483,647.
 
+    Args:
+        data: Byte buffer containing encoded NumHeader32 data.
+        offset: Starting byte index in buffer (defaults to 0).
+        end: Ending byte index in buffer (defaults to len(data)).
 
-def _encode(value: int, mode: int) -> bytes:
+    Returns:
+        A tuple of `(bytes_parsed, value)`:
+        - `bytes_parsed`: Number of bytes consumed (1, 4, or 0 if short).
+        - `value`: Decoded integer (0..2,147,483,647), or `None` if short.
     """
-    Mode can be either 16 or 32 (number of bits written when long_bit is 1)
-
-    returns a bytes object
-    """
-    if value < 128:
-        return bytes([value])
-    else:
-        if mode == 16:
-            if value < 32768:
-                return bytes([0x80 | (value >> 8), value & 0xFF])
-            elif value < 32896:
-                return bytes([0x80, (value - 32768) & 0xFF])
-            else:
-                raise ValueError("value must be an integer in range(0,32896)")
-        elif mode == 32:
-            if value < 2147483648:
-                return bytes([(0x80 | ((value >> 24) & 0xFF)),
-                              (value >> 16) & 0xFF,
-                              (value >> 8) & 0xFF,
-                              (value & 0xFF)])
-            else:
-                raise ValueError(
-                    "value must be an integer in range(0,2147483648)")
-        else:
-            raise ValueError('invalid mode argument: ' + str(mode))
+    if end is None:
+        end = len(data)
+    if offset + 1 <= end:
+        if (data[offset] & 0x80) == 0:
+            return 1, data[offset]
+        if offset + 4 <= end:
+            val = _ST_UINT32.unpack_from(data, offset)[0] & 0x7FFFFFFF
+            return 4, val
+    return 0, None
 
 
 def encode16(value: int) -> bytes:
-    """
-    Encodes NumHeader16 value
+    """Encodes an integer as a NumHeader16 value.
 
-    returns bytes object
+    Encodes values in the range 0..32,895 using either 1 byte (0..127)
+    or 2 bytes (128..32,895).
+
+    Args:
+        value: Non-negative integer to encode (0 <= value <= 32,895).
+
+    Returns:
+        A `bytes` object of length 1 (value < 128) or 2 (value >= 128).
+
+    Raises:
+        ValueError: If `value` is negative or greater than 32,895.
     """
-    return _encode(value, 16)
+    if 0 <= value < 128:
+        return bytes([value])
+    if 128 <= value < 32768:
+        return _ST_UINT16.pack(0x8000 | value)
+    if 32768 <= value < 32896:
+        return _ST_UINT16.pack(0x8000 | (value - 32768))
+    raise ValueError("value must be an integer in range(0,32896)")
 
 
 def encode32(value: int) -> bytes:
-    """
-    Encodes NumHeader32 value
+    """Encodes an integer as a NumHeader32 value.
 
-    returns bytes object
+    Encodes values in the range 0..2,147,483,647 using either 1 byte (0..127)
+    or 4 bytes (128..2,147,483,647).
+
+    Args:
+        value: Non-negative integer to encode (0 <= value <= 2,147,483,647).
+
+    Returns:
+        A `bytes` object of length 1 (value < 128) or 4 (value >= 128).
+
+    Raises:
+        ValueError: If `value` is negative or greater than 2,147,483,647.
     """
-    return _encode(value, 32)
+    if 0 <= value < 128:
+        return bytes([value])
+    if 128 <= value < 2147483648:
+        return _ST_UINT32.pack(0x80000000 | value)
+    raise ValueError("value must be an integer in range(0,2147483648)")
