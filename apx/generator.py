@@ -716,7 +716,11 @@ class NodeGenerator:
         code = headerFile.code
         code.append(C.blank(1))
         code.extend(_genCommentHeader('INCLUDES'))
-        code.append(C.include('Rte_Type.h'))
+        if self.includes is not None:
+            for filename in self.includes:
+                code.append(C.include(filename))
+        else:
+            code.append(C.include('Rte_Type.h'))
 
         code.append(C.blank(1))
         code.extend(_genCommentHeader('FUNCTION PROTOTYPES'))
