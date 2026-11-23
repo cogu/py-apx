@@ -303,6 +303,16 @@ class DataSignature:
       else:
          return _derive_c_typename(self.dataElement)
 
+   def port_ctypename(self, typeList=None) -> str:
+      """Return the C port parameter type before adding any pointer qualifier.
+
+      Numeric arrays use their element type rather than the array typedef.
+      """
+      element = self.resolve_data_element(typeList)
+      if element.arrayLen is not None and UINT8_TYPE_CODE <= element.typeCode <= SINT64_TYPE_CODE:
+         return _derive_c_typename(element)
+      return self.ctypename(typeList)
+
    def isComplexType(self, typeList = None):
       return self.dataElement.isComplexType(typeList)
 

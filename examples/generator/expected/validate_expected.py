@@ -48,7 +48,7 @@ def main() -> int:
     expected_dir = Path(__file__).resolve().parent
     generator_dir = expected_dir.parent
     matches = True
-    for number in range(1, 4):
+    for number in range(1, 5):
         if not validate_directory(expected_dir / f"example_node{number}", generator_dir / f"derived{number}"):
             matches = False
     return 0 if matches else 1

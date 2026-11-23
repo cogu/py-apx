@@ -133,6 +133,9 @@ class NodeGenerator:
         """
         generates APX node layer for single APX node
 
+        Numeric array ports take pointers to their element type, including
+        arrays imported from AUTOSAR.
+
         parameters:
            output_dir: directory where to generate header and source files
 
@@ -188,7 +191,7 @@ class NodeGenerator:
             is_pointer=False
             func = C.function("ApxNode_Read_%s_%s" % (name, port.name), "Std_ReturnType")
             is_pointer=True
-            type_name = port.dsg.ctypename(node.dataTypes)
+            type_name = port.dsg.port_ctypename(node.dataTypes)
             func.add_param(C.variable('val', type_name, pointer=is_pointer))
             packLen=port.dsg.packLen()
             port.dsg.typeList=node.dataTypes
@@ -212,7 +215,7 @@ class NodeGenerator:
             func = C.function("ApxNode_Write_%s_%s" % (name, port.name), "Std_ReturnType")
             if port.dsg.isComplexType(node.dataTypes):
                 is_pointer=True
-            func.add_param(C.variable('val', port.dsg.ctypename(node.dataTypes), pointer=is_pointer))
+            func.add_param(C.variable('val', port.dsg.port_ctypename(node.dataTypes), pointer=is_pointer))
             packLen=port.dsg.packLen()
             port.dsg.typeList= node.dataTypes
             initValue=None

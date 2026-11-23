@@ -1,0 +1,7 @@
+APX/1.2
+N"Example4"
+T"MyRecord_T"{"First"C"Second"S[4]}
+T"U16Array_T"S[4]
+P"U16ArraySender"T[1]:={0,0,0,0}
+R"RecordReceiver"T[0]:={0,{0,0,0,0}}
+R"U16ArrayReceiver"T[1]:={0,0,0,0}

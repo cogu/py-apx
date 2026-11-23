@@ -1,6 +1,7 @@
 import os, sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import apx
+import autosar
 import unittest
 import time
 import shutil
@@ -40,6 +41,40 @@ class TestApxGenerator(GeneratorTestCase):
                     (Path(expected_dir) / filename).read_bytes(),
                     (Path(output_dir) / filename).read_bytes(),
                 )
+
+    def test_autosar_array_and_record_port_types(self):
+        ws = autosar.workspace()
+        types = ws.createPackage('DataType', role='DataType')
+        types.createIntegerDataType('UInt8', min=0, max=255)
+        element = types.createIntegerDataType('UInt16', min=0, max=65535)
+        types.createArrayDataType('U16Array_T', element.ref, 4)
+        types.createRecordDataType('MyRecord_T', elements=[
+            ('First', 'UInt8'),
+            ('Second', 'U16Array_T'),
+        ])
+        interfaces = ws.createPackage('PortInterface', role='PortInterface')
+        interfaces.createSenderReceiverInterface('Array_I', autosar.DataElement('Value', 'U16Array_T'))
+        interfaces.createSenderReceiverInterface('Record_I', autosar.DataElement('Value', 'MyRecord_T'))
+        components = ws.createPackage('ComponentType', role='ComponentType')
+        swc = components.createApplicationSoftwareComponent('ArrayNode')
+        swc.createRequirePort('Receiver', 'Array_I')
+        swc.createProvidePort('Sender', 'Array_I')
+        swc.createRequirePort('RecordReceiver', 'Record_I')
+        node = apx.Node().import_autosar_swc(swc)
+
+        with TemporaryDirectory() as output_dir:
+            apx.NodeGenerator().generate(output_dir, node, callbacks={'Receiver': 'OnArrayReceived'})
+            for suffix in ('.h', '.c'):
+                with self.subTest(suffix=suffix):
+                    generated = (Path(output_dir) / ('ApxNode_ArrayNode' + suffix)).read_text()
+                    self.assertIn('ApxNode_Read_ArrayNode_Receiver(uint16 *val)', generated)
+                    self.assertIn('ApxNode_Write_ArrayNode_Sender(uint16 *val)', generated)
+                    self.assertIn('ApxNode_Read_ArrayNode_RecordReceiver(MyRecord_T *val)', generated)
+                    if suffix == '.c':
+                        self.assertIn('val->First = (uint8_t) *p;', generated)
+                        self.assertIn('val->Second[i] = (uint16_t) unpackLE(', generated)
+            callback_header = (Path(output_dir) / 'ApxNode_ArrayNode_Cbk.h').read_text()
+            self.assertIn('void OnArrayReceived(uint16 *value);', callback_header)
 
     def test_code_generator(self):
         node = apx.Node("Test")
