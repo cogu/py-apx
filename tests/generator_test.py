@@ -5,7 +5,9 @@ import unittest
 import time
 import shutil
 
-class TestApxGenerator(unittest.TestCase):
+from tests.generator_test_support import GeneratorTestCase
+
+class TestApxGenerator(GeneratorTestCase):
 
     def test_ctypename(self):
         dsg = apx.DataSignature('C')
@@ -53,39 +55,11 @@ class TestApxGenerator(unittest.TestCase):
         # If we want ports in the order appended; explicitly finalize the node before generator
         node.finalize(sort=False, compact=True)
         apx.NodeGenerator().generate(output_dir_full, node, callbacks=callback_map)
-        with open (os.path.join(os.path.dirname(__file__), output_dir, 'ApxNode_{0.name}.h'.format(node)), "r") as fp:
-            generated=fp.read()
-        with open (os.path.join(os.path.dirname(__file__), 'expected_gen', 'ApxNode_{0.name}.h'.format(node)), "r") as fp:
-            expected=fp.read()
-        self.assertEqual(expected, generated)
-        with open (os.path.join(os.path.dirname(__file__), output_dir, 'ApxNode_{0.name}.c'.format(node)), "r") as fp:
-            generated=fp.read()
-        with open (os.path.join(os.path.dirname(__file__), 'expected_gen', 'ApxNode_{0.name}.c'.format(node)), "r") as fp:
-            expected=fp.read()
-        self.assertEqual(expected, generated)
-        with open (os.path.join(os.path.dirname(__file__), output_dir, 'ApxNode_{0.name}_Cbk.h'.format(node)), "r") as fp:
-            generated=fp.read()
-        with open (os.path.join(os.path.dirname(__file__), 'expected_gen', 'ApxNode_{0.name}_Cbk.h'.format(node)), "r") as fp:
-            expected=fp.read()
-        self.assertEqual(expected, generated)
+        self.assert_generated_files(output_dir_full, node.name, '.h', '.c', '_Cbk.h')
 
         node.name = "Test_compact"
         apx.NodeGenerator().generate(output_dir_full, node, callbacks=callback_map, compact=True)
-        with open (os.path.join(os.path.dirname(__file__), output_dir, 'ApxNode_{0.name}.h'.format(node)), "r") as fp:
-            generated=fp.read()
-        with open (os.path.join(os.path.dirname(__file__), 'expected_gen', 'ApxNode_{0.name}.h'.format(node)), "r") as fp:
-            expected=fp.read()
-        self.assertEqual(expected, generated)
-        with open (os.path.join(os.path.dirname(__file__), output_dir, 'ApxNode_{0.name}.c'.format(node)), "r") as fp:
-            generated=fp.read()
-        with open (os.path.join(os.path.dirname(__file__), 'expected_gen', 'ApxNode_{0.name}.c'.format(node)), "r") as fp:
-            expected=fp.read()
-        self.assertEqual(expected, generated)
-        with open (os.path.join(os.path.dirname(__file__), output_dir, 'ApxNode_{0.name}_Cbk.h'.format(node)), "r") as fp:
-            generated=fp.read()
-        with open (os.path.join(os.path.dirname(__file__), 'expected_gen', 'ApxNode_{0.name}_Cbk.h'.format(node)), "r") as fp:
-            expected=fp.read()
-        self.assertEqual(expected, generated)
+        self.assert_generated_files(output_dir_full, node.name, '.h', '.c', '_Cbk.h')
         shutil.rmtree(output_dir_full)
 
 if __name__ == '__main__':
