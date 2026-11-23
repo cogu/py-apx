@@ -45,7 +45,6 @@ class Context:
             with open(file_name, "w", newline='\n') as fp:
                 fp.write("APX/1.2\n") #APX Text header
                 node.write(fp, normalized)
-                fp.write("\n") #Add extra newline at end of file
             file_list.append(file_name)
         return file_list
 
