@@ -143,6 +143,7 @@ class NodeGenerator:
            includes: optional list of additional include files,
 
            callbacks: optional dict of require port callbacks (key: port name, value: name of C callback function)
+                      None or an empty dict disables callback generation.
 
            header_dir: optional directory where to redirect header generation (instead of output_dir)
 
@@ -168,7 +169,7 @@ class NodeGenerator:
         self.prefixed_name = prefixed_name
         self.includes=includes
         self.callback_list = []
-        self.has_callbacks = True if (callbacks is not None) else False
+        self.has_callbacks = bool(callbacks)
         self.direct_write_ports = set()
         self.with_inport_synced_status_flags = with_inport_synced_status_flags
 

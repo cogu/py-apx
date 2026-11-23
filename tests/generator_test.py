@@ -4,6 +4,8 @@ import apx
 import unittest
 import time
 import shutil
+from pathlib import Path
+from tempfile import TemporaryDirectory
 
 from tests.generator_test_support import GeneratorTestCase
 
@@ -22,6 +24,22 @@ class TestApxGenerator(GeneratorTestCase):
         self.assertEqual(dsg.ctypename(),'uint32')
         dsg = apx.DataSignature('l')
         self.assertEqual(dsg.ctypename(),'sint32')
+
+    def test_empty_callback_map_matches_no_callbacks(self):
+        node = apx.Node("EmptyCallbacks")
+        node.append(apx.RequirePort('Speed', 'C'))
+
+        with TemporaryDirectory() as expected_dir, TemporaryDirectory() as output_dir:
+            apx.NodeGenerator().generate(expected_dir, node)
+            apx.NodeGenerator().generate(output_dir, node, callbacks={})
+
+            filenames = ['ApxNode_EmptyCallbacks.c', 'ApxNode_EmptyCallbacks.h']
+            self.assertCountEqual(os.listdir(output_dir), filenames)
+            for filename in filenames:
+                self.assertEqual(
+                    (Path(expected_dir) / filename).read_bytes(),
+                    (Path(output_dir) / filename).read_bytes(),
+                )
 
     def test_code_generator(self):
         node = apx.Node("Test")
