@@ -1,0 +1,8 @@
+APX/1.2
+N"Example1"
+T"OffOn_T"C(0,3)
+T"Percent_T"C
+T"VehicleSpeed_T"S
+P"FuelLevelPercent"T[1]:=255
+R"EngineRunningStatus"T[0]:=3
+R"VehicleSpeed"T[2]:=0xFFFF
