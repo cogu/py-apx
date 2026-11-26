@@ -1,8 +1,8 @@
 """Compare generator output with the checked-in snapshots.
 
-Run example_node1.py through example_node3.py from examples/generator first.
-Then run ./validate_examples.sh from the repository root to check the derived
-directories without changing them.
+Run ./validate_examples.sh from the repository root to regenerate the examples
+and check their output. Run this Python script directly to check existing output
+without regenerating it.
 """
 
 from difflib import unified_diff
