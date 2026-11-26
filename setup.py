@@ -12,7 +12,7 @@ def test_suite():
     return suite
 
 setup(name='py-apx',
-      version='0.4.5',
+      version='0.4.6',
       description='A framework for sending AUTOSAR signal data to non-AUTOSAR applications',
       long_description=readme(),
       long_description_content_type='text/x-rst',

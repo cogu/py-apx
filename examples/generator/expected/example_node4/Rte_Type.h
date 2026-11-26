@@ -20,15 +20,15 @@ typedef uint8 UInt8;
 #define UInt8_LowerLimit ((UInt8)0u)
 #define UInt8_UpperLimit ((UInt8)255u)
 
+#define Rte_TypeDef_U16Array_T
+typedef UInt16 U16Array_T[4];
+
 #define Rte_TypeDef_MyRecord_T
 typedef struct
 {
    UInt8 First;
    U16Array_T Second;
 } MyRecord_T;
-
-#define Rte_TypeDef_U16Array_T
-typedef UInt16 U16Array_T[4];
 
 
 #ifndef RTE_SUPPRESS_UNUSED_DATATYPES
